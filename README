@@ -1,0 +1,7 @@
+Part of Netsukuku.
+
+This is the module Identities.
+It depends on: tasklet-system, ntkd-common, ntkdrpc.
+
+The ''ntkd'' daemon includes it.
+
