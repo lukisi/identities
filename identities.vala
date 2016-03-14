@@ -68,6 +68,80 @@ namespace Netsukuku
             error("not implemented yet");
         }
 
+        /* Associations
+         */
+
+        private ArrayList<string> dev_list;
+        private HashMap<IIdmgmtArc, int> arc_list;
+        private ArrayList<Identity> id_list;
+        private Identity main_id;
+        private HashMap<string, string> namespaces;
+        private HashMap<string, HandledNic> handled_nics;
+        private HashMap<string, ArrayList<IdentityArc>> identity_arcs;
+
+        /* Helper functions for management of associations
+         */
+
+        // for arcs to-string
+        private int next_arc_id;
+        private string arc_to_string(IIdmgmtArc arc)
+        {
+            assert(arc_list.has_key(arc));
+            return @"$(arc_list[arc])";
+        }
+        private void add_arc_to_list(IIdmgmtArc arc)
+        {
+            if (arc_list.has_key(arc)) return;
+            arc_list[arc] = next_arc_id++;
+        }
+
+        // query: set of keys for handled_nics where dev=xyz
+        private Gee.List<string> handled_nics_for_dev(string dev)
+        {
+            ArrayList<string> ret = new ArrayList<string>();
+            foreach (string k in handled_nics.keys)
+            {
+                if (k.has_suffix(@"-$(dev)")) ret.add(k);
+            }
+            return ret;
+        }
+
+        // query: set of keys for handled_nics where id=xyz
+        private Gee.List<string> handled_nics_for_identity(Identity id)
+        {
+            string s_id = id.to_string();
+            ArrayList<string> ret = new ArrayList<string>();
+            foreach (string k in handled_nics.keys)
+            {
+                if (k.has_prefix(@"$(s_id)-")) ret.add(k);
+            }
+            return ret;
+        }
+
+        // query: set of keys for identity_arcs where arc=xyz
+        private Gee.List<string> identity_arcs_for_arc(IIdmgmtArc arc)
+        {
+            string s_arc = arc_to_string(arc);
+            ArrayList<string> ret = new ArrayList<string>();
+            foreach (string k in identity_arcs.keys)
+            {
+                if (k.has_suffix(@"-$(s_arc)")) ret.add(k);
+            }
+            return ret;
+        }
+
+        // query: set of keys for identity_arcs where if=xyz
+        private Gee.List<string> identity_arcs_for_identity(Identity id)
+        {
+            string s_id = id.to_string();
+            ArrayList<string> ret = new ArrayList<string>();
+            foreach (string k in identity_arcs.keys)
+            {
+                if (k.has_prefix(@"$(s_id)-")) ret.add(k);
+            }
+            return ret;
+        }
+
         /* Remotable methods
          */
 
