@@ -68,6 +68,11 @@ namespace Netsukuku
             error("not implemented yet");
         }
 
+        /* Status
+         */
+
+        private ArrayList<MigrationData> pending_migrations;
+
         /* Associations
          */
 
@@ -142,6 +147,64 @@ namespace Netsukuku
             return ret;
         }
 
+        /* Public informational methods
+         */
+
+        public NodeID get_main_id()
+        {
+            error("not implemented yet");
+        }
+
+        public Gee.List<NodeID> get_id_list()
+        {
+            error("not implemented yet");
+        }
+
+        public string get_namespace(NodeID id)
+        {
+            error("not implemented yet");
+        }
+
+        public Gee.List<IIdmgmtIdentityArc> get_identity_arcs(IIdmgmtArc arc, NodeID id)
+        {
+            error("not implemented yet");
+        }
+
+        /* Public operational methods
+         */
+
+        public void prepare_add_identity(int migration_id, NodeID old_id)
+        {
+            error("not implemented yet");
+        }
+
+        public NodeID add_identity(int migration_id, NodeID old_id)
+        {
+            error("not implemented yet");
+        }
+
+        public void add_arc_identity(IIdmgmtArc arc, NodeID id, NodeID peer_nodeid, string peer_mac, string peer_linklocal)
+        {
+            error("not implemented yet");
+        }
+
+        public void remove_arc_identity(IIdmgmtArc arc, NodeID id, NodeID peer_nodeid)
+        {
+            error("not implemented yet");
+        }
+
+        public void remove_identity(NodeID id)
+        {
+            error("not implemented yet");
+        }
+
+        /* Signals
+         */
+
+        public signal void identity_arc_added(IIdmgmtArc arc, NodeID id, IIdmgmtIdentityArc id_arc);
+        public signal void identity_arc_changed(IIdmgmtArc arc, NodeID id, IIdmgmtIdentityArc id_arc);
+        public signal void identity_arc_removed(IIdmgmtArc arc, NodeID id, NodeID peer_nodeid);
+
         /* Remotable methods
          */
 
@@ -201,6 +264,23 @@ namespace Netsukuku
         public NodeID peer_new_id {get; set;}
         public string peer_old_id_new_mac {get; set;}
         public string peer_old_id_new_linklocal {get; set;}
+    }
+
+    internal class MigrationData : Object
+    {
+        public bool ready;
+        public int migration_id;
+        public NodeID old_id;
+        public NodeID new_id;
+        public HashMap<string, MigrationDeviceData> devices;
+    }
+
+    internal class MigrationDeviceData : Object
+    {
+        public string real_mac;
+        public string old_id_new_dev;
+        public string old_id_new_mac;
+        public string old_id_new_linklocal;
     }
 }
 
