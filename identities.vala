@@ -181,22 +181,29 @@ namespace Netsukuku
 
         public NodeID get_main_id()
         {
-            error("not implemented yet");
+            return main_id.id;
         }
 
         public Gee.List<NodeID> get_id_list()
         {
-            error("not implemented yet");
+            ArrayList<NodeID> ret = new ArrayList<NodeID>();
+            foreach (Identity id in id_list) ret.add(id.id);
+            return ret;
         }
 
         public string get_namespace(NodeID id)
         {
-            error("not implemented yet");
+            assert(namespaces.has_key(@"$(id.id)"));
+            return namespaces[@"$(id.id)"];
         }
 
         public Gee.List<IIdmgmtIdentityArc> get_identity_arcs(IIdmgmtArc arc, NodeID id)
         {
-            error("not implemented yet");
+            string s_arc = arc_to_string(arc);
+            string s_id = @"$(id.id)";
+            string k = @"$(s_id)-$(s_arc)";
+            assert(identity_arcs.has_key(k));
+            return identity_arcs[k];
         }
 
         /* Public operational methods
@@ -265,7 +272,7 @@ namespace Netsukuku
 
         public string to_string()
         {
-            return @"$(id)";
+            return @"$(id.id)";
         }
     }
 
