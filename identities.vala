@@ -65,13 +65,42 @@ namespace Netsukuku
             typeof(NodeID).class_peek();
             typeof(NodeIDAsIdentityID).class_peek();
             tasklet = _tasklet;
-            error("not implemented yet");
+            // init collections and stuff
+            next_arc_id = 1;
+            pending_migrations = new ArrayList<MigrationData>();
+            dev_list = new ArrayList<string>();
+            arc_list = new HashMap<IIdmgmtArc, int>();
+            id_list = new ArrayList<Identity>();
+            namespaces = new HashMap<string, string>();
+            handled_nics = new HashMap<string, HandledNic>();
+            identity_arcs = new HashMap<string, ArrayList<IdentityArc>>();
+            // accept arguments
+            assert(if_list_dev.size == if_list_mac.size);
+            assert(if_list_dev.size == if_list_linklocal.size);
+            this.netns_manager = netns_manager;
+            this.stub_factory = stub_factory;
+            // create first identity in default namespace
+            main_id = new Identity();
+            id_list.add(main_id);
+            namespaces[@"$(main_id)"] = "";
+            for (int i = 0; i < if_list_dev.size; i++)
+            {
+                string dev = if_list_dev[i];
+                dev_list.add(dev);
+                HandledNic handled_nic = new HandledNic();
+                handled_nic.dev = dev;
+                handled_nic.mac = if_list_mac[i];
+                handled_nic.linklocal = if_list_linklocal[i];
+                handled_nics[@"$(main_id)-$(dev)"] = handled_nic;
+            }
         }
 
         /* Status
          */
 
         private ArrayList<MigrationData> pending_migrations;
+        private IIdmgmtNetnsManager netns_manager;
+        private IIdmgmtStubFactory stub_factory;
 
         /* Associations
          */
@@ -173,6 +202,16 @@ namespace Netsukuku
         /* Public operational methods
          */
 
+        public void set_identity_module(NodeID id, string name, Object obj)
+        {
+            error("not implemented yet");
+        }
+
+        public Object get_identity_module(NodeID id, string name)
+        {
+            error("not implemented yet");
+        }
+
         public void prepare_add_identity(int migration_id, NodeID old_id)
         {
             error("not implemented yet");
@@ -219,9 +258,14 @@ namespace Netsukuku
     internal class Identity : Object
     {
         public NodeID id;
+        public Identity()
+        {
+            id = new NodeID(Random.int_range(1, int.MAX));
+        }
+
         public string to_string()
         {
-            error("not implemented yet");
+            return @"$(id)";
         }
     }
 
