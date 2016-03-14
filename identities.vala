@@ -86,12 +86,9 @@ namespace Netsukuku
             for (int i = 0; i < if_list_dev.size; i++)
             {
                 string dev = if_list_dev[i];
-                dev_list.add(dev);
-                HandledNic handled_nic = new HandledNic();
-                handled_nic.dev = dev;
-                handled_nic.mac = if_list_mac[i];
-                handled_nic.linklocal = if_list_linklocal[i];
-                handled_nics[@"$(main_id)-$(dev)"] = handled_nic;
+                string mac = if_list_mac[i];
+                string linklocal = if_list_linklocal[i];
+                add_real_nic(dev, mac, linklocal);
             }
         }
 
@@ -176,17 +173,56 @@ namespace Netsukuku
             return ret;
         }
 
+        // Add a real nic to the dev_list. Give it to the main identity in handled_nics.
+        private void add_real_nic(string dev, string mac, string linklocal)
+        {
+            assert(! dev_list.contains(dev));
+            dev_list.add(dev);
+            HandledNic handled_nic = new HandledNic();
+            handled_nic.dev = dev;
+            handled_nic.mac = mac;
+            handled_nic.linklocal = linklocal;
+            handled_nics[@"$(main_id)-$(dev)"] = handled_nic;
+        }
+
         /* Public input methods
          */
 
         public void add_handled_nic(string dev, string mac, string linklocal)
         {
-            error("not implemented yet");
+            add_real_nic(dev, mac, linklocal);
         }
 
         public void remove_handled_nic(string dev)
         {
-            error("not implemented yet");
+            assert(dev in dev_list);
+            assert(dev_list.size > 2);
+            // First, for all the connectivity identities (some of them might be removed)
+            ArrayList<Identity> id_list_copy = new ArrayList<Identity>();
+            id_list_copy.add_all(id_list);
+            foreach (Identity id in id_list_copy) if (id != main_id)
+            {
+                string k = @"$(id)-$(dev)";
+                if (handled_nics.has_key(k))
+                {
+                    HandledNic hnic = handled_nics[k];
+                    // hnic.dev is a pseudodev that has to be deleted.
+                    string ns = namespaces[@"$(id)"];
+                    netns_manager.delete_pseudodev(ns, hnic.dev);
+                    // remove from association
+                    handled_nics.unset(k);
+                    // check if "id" still has some nics.
+                    Gee.List<string> cur_nics = handled_nics_for_identity(id);
+                    if (cur_nics.is_empty)
+                    {
+                        // "id" has no more nics, it has to be removed.
+                        remove_identity(id);
+                    }
+                }
+            }
+            // Then, for the main identity
+            string k = @"$(main_id)-$(dev)";
+            handled_nics.unset(k);
         }
 
         public void add_arc(IIdmgmtArc arc)
