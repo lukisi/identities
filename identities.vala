@@ -176,6 +176,29 @@ namespace Netsukuku
             return ret;
         }
 
+        /* Public input methods
+         */
+
+        public void add_handled_nic(string dev, string mac, string linklocal)
+        {
+            error("not implemented yet");
+        }
+
+        public void remove_handled_nic(string dev)
+        {
+            error("not implemented yet");
+        }
+
+        public void add_arc(IIdmgmtArc arc)
+        {
+            error("not implemented yet");
+        }
+
+        public void remove_arc(IIdmgmtArc arc)
+        {
+            error("not implemented yet");
+        }
+
         /* Public informational methods
          */
 
