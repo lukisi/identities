@@ -237,12 +237,41 @@ namespace Netsukuku
 
         public void add_arc(IIdmgmtArc arc)
         {
-            error("not implemented yet");
+            assert(! arc_list.has_key(arc));
+            add_arc_to_list(arc);
+            string s_arc = arc_to_string(arc);
+            foreach (Identity id in id_list)
+            {
+                string s_id = @"$(id)";
+                string k = @"$(s_id)-$(s_arc)";
+                identity_arcs[k] = new ArrayList<IdentityArc>();
+            }
         }
 
         public void remove_arc(IIdmgmtArc arc)
         {
-            error("not implemented yet");
+            string s_arc = arc_to_string(arc);
+            // First, for all the connectivity identities
+            foreach (Identity id in id_list) if (id != main_id)
+            {
+                string s_id = @"$(id)";
+                string k = @"$(s_id)-$(s_arc)";
+                foreach (IdentityArc id_arc in identity_arcs[k])
+                {
+                    string ns = namespaces[s_id];
+                    string dev = arc.get_dev();
+                    string pseudodev = handled_nics[@"$(s_id)-$(dev)"].dev;
+                    string linklocal = handled_nics[@"$(s_id)-$(dev)"].linklocal;
+                    string peer_linklocal = id_arc.peer_linklocal;
+                    netns_manager.remove_gateway(ns, linklocal, peer_linklocal, pseudodev);
+                }
+                identity_arcs.unset(k);
+            }
+            // Then, for the main identity
+            string k = @"$(main_id)-$(s_arc)";
+            identity_arcs.unset(k);
+            // Finally remove the arc from the collection
+            arc_list.unset(arc);
         }
 
         /* Public informational methods
@@ -355,23 +384,23 @@ namespace Netsukuku
 
     internal class IdentityArc : Object, IIdmgmtIdentityArc
     {
-        public NodeID nodeid;
-        public string mac;
-        public string linklocal;
+        public NodeID peer_nodeid;
+        public string peer_mac;
+        public string peer_linklocal;
 
         public NodeID get_peer_nodeid()
         {
-            return nodeid;
+            return peer_nodeid;
         }
 
         public string get_peer_mac()
         {
-            return mac;
+            return peer_mac;
         }
 
         public string get_peer_linklocal()
         {
-            return linklocal;
+            return peer_linklocal;
         }
     }
 
