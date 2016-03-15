@@ -185,6 +185,16 @@ namespace Netsukuku
             handled_nics[@"$(main_id)-$(dev)"] = handled_nic;
         }
 
+        // Retrieve instance of Identity given the NodeID of one of my identities.
+        private Identity find_identity(NodeID id)
+        {
+            foreach (Identity ret in id_list)
+            {
+                if (id.equals(ret.id)) return ret;
+            }
+            assert_not_reached();
+        }
+
         /* Public input methods
          */
 
@@ -216,7 +226,7 @@ namespace Netsukuku
                     if (cur_nics.is_empty)
                     {
                         // "id" has no more nics, it has to be removed.
-                        remove_identity(id);
+                        remove_identity(id.id);
                     }
                 }
             }
@@ -298,8 +308,9 @@ namespace Netsukuku
             error("not implemented yet");
         }
 
-        public void remove_identity(NodeID id)
+        public void remove_identity(NodeID _id)
         {
+            Identity id = find_identity(_id);
             error("not implemented yet");
         }
 
