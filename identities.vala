@@ -307,14 +307,17 @@ namespace Netsukuku
         /* Public operational methods
          */
 
-        public void set_identity_module(NodeID id, string name, Object obj)
+        public void set_identity_module(NodeID _id, string name, Object obj)
         {
-            error("not implemented yet");
+            Identity id = find_identity(_id);
+            id.modules[name] = obj;
         }
 
-        public Object get_identity_module(NodeID id, string name)
+        public Object get_identity_module(NodeID _id, string name)
         {
-            error("not implemented yet");
+            Identity id = find_identity(_id);
+            assert(id.modules.has_key(name));
+            return id.modules[name];
         }
 
         public void prepare_add_identity(int migration_id, NodeID old_id)
@@ -367,12 +370,15 @@ namespace Netsukuku
         public Identity()
         {
             id = new NodeID(Random.int_range(1, int.MAX));
+            modules = new HashMap<string, Object>();
         }
 
         public string to_string()
         {
             return @"$(id.id)";
         }
+
+        public HashMap<string, Object> modules;
     }
 
     internal class HandledNic : Object
