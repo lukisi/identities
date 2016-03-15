@@ -35,6 +35,7 @@ namespace Netsukuku
     public interface IIdmgmtStubFactory : Object
     {
         public abstract IIdentityManagerStub get_stub(IIdmgmtArc arc);
+        public abstract IIdmgmtArc? get_arc(CallerInfo caller);
     }
 
     public interface IIdmgmtArc : Object
@@ -322,12 +323,141 @@ namespace Netsukuku
 
         public void prepare_add_identity(int migration_id, NodeID old_id)
         {
-            error("not implemented yet");
+            find_identity(old_id); // make sure identity is there
+            MigrationData migration_data = new MigrationData();
+            migration_data.migration_id = migration_id;
+            migration_data.old_id = old_id;
+            migration_data.ready = false;
+            pending_migrations.add(migration_data);
+            // Start a tasklet to remove the data from memory if the module does
+            // not take care after a reasonable time.,
+            CleanupPendingMigrationTasklet ts = new CleanupPendingMigrationTasklet();
+            ts.mgr = this;
+            ts.migration_id = migration_id;
+            ts.old_id = old_id;
+            tasklet.spawn(ts);
+        }
+        private void cleanup_pending_migration(int migration_id, NodeID old_id)
+        {
+            tasklet.ms_wait(600000);
+            for (int i = 0; i < pending_migrations.size; i++)
+            {
+                if (pending_migrations[i].migration_id == migration_id &&
+                    pending_migrations[i].old_id.equals(old_id))
+                {
+                    pending_migrations.remove_at(i);
+                    break;
+                }
+            }
+        }
+        private class CleanupPendingMigrationTasklet : Object, ITaskletSpawnable
+        {
+            public IdentityManager mgr;
+            public int migration_id;
+            public NodeID old_id;
+            public void * func()
+            {
+                mgr.cleanup_pending_migration(migration_id, old_id);
+                return null;
+            }
         }
 
+        private int next_namespace = 0;
         public NodeID add_identity(int migration_id, NodeID old_id)
         {
-            error("not implemented yet");
+            Identity old_identity = find_identity(old_id);
+            MigrationData? migration_data = null;
+            for (int i = 0; i < pending_migrations.size; i++)
+            {
+                if (pending_migrations[i].migration_id == migration_id &&
+                    pending_migrations[i].old_id.equals(old_id))
+                {
+                    migration_data = pending_migrations[i];
+                    break;
+                }
+            }
+            assert(migration_data != null);
+            Identity new_identity = new Identity();
+            id_list.add(new_identity);
+            migration_data.new_id = new_identity.id;
+            // Choose a name for namespace.
+            int this_namespace = next_namespace++;
+            string ns_temp = @"ntkv$(this_namespace)";
+            netns_manager.create_namespace(ns_temp);
+            namespaces[@"$(new_identity)"] = namespaces[@"$(old_identity)"];
+            namespaces[@"$(old_identity)"] = ns_temp;
+            if (main_id == old_identity) main_id = new_identity;
+            // Build pseudodevs
+            foreach (string dev in dev_list)
+            {
+                string pseudo_dev = @"$(ns_temp)_$(dev)";
+                string pseudo_mac;
+                netns_manager.create_pseudodev(dev, ns_temp, pseudo_dev, out pseudo_mac);
+                // generate a random IP for this pseudodev
+                int i2 = Random.int_range(0, 255);
+                int i3 = Random.int_range(0, 255);
+                string old_id_new_linklocal = @"169.254.$(i2).$(i3)";
+                netns_manager.add_address(ns_temp, pseudo_dev, old_id_new_linklocal);
+                // Store values
+                HandledNic old_id_new_hnic = new HandledNic();
+                old_id_new_hnic.dev = pseudo_dev;
+                old_id_new_hnic.mac = pseudo_mac;
+                old_id_new_hnic.linklocal = old_id_new_linklocal;
+                string old_id_k = @"$(old_identity)-$(dev)";
+                string new_id_k = @"$(new_identity)-$(dev)";
+                handled_nics[new_id_k] = handled_nics[old_id_k];
+                handled_nics[old_id_k] = old_id_new_hnic;
+                MigrationDeviceData device_data = new MigrationDeviceData();
+                device_data.old_id_new_dev = pseudo_dev;
+                device_data.old_id_new_mac = pseudo_mac;
+                device_data.old_id_new_linklocal = old_id_new_linklocal;
+                migration_data.devices[dev] = device_data;
+            }
+            migration_data.ready = true;
+            // The first phase is done.
+            // Duplication of all identity-arcs.
+            foreach (IIdmgmtArc arc0 in arc_list.keys)
+            {
+                string s_arc0 = arc_to_string(arc0);
+                string k_old = @"$(old_identity)-$(s_arc0)";
+                string k_new = @"$(new_identity)-$(s_arc0)";
+                // prepare list of identity-arcs of new_identity
+                identity_arcs[k_new] = new ArrayList<IdentityArc>();
+                // retrieve the identity-arcs of old_identity
+                if (! identity_arcs.has_key(k_old)) continue;
+                foreach (IdentityArc w0 in identity_arcs[k_old])
+                {
+                    IdentityArc w1 = w0.copy();
+                    identity_arcs[k_new].add(w1);
+                    NodeIDAsIdentityID iid_peer_id = new NodeIDAsIdentityID();
+                    iid_peer_id.id = w0.peer_nodeid;
+                    NodeIDAsIdentityID iid_old_id = new NodeIDAsIdentityID();
+                    iid_old_id.id = migration_data.old_id;
+                    NodeIDAsIdentityID iid_new_id = new NodeIDAsIdentityID();
+                    iid_new_id.id = migration_data.new_id;
+                    string arc0_dev = arc0.get_dev();
+                    string old_id_new_dev =
+                        migration_data.devices[arc0_dev].old_id_new_dev;
+                    string old_id_new_mac =
+                        migration_data.devices[arc0_dev].old_id_new_mac;
+                    string old_id_new_linklocal =
+                        migration_data.devices[arc0_dev].old_id_new_linklocal;
+                    IDuplicationData? dup_data = stub_factory.get_stub(arc0).match_duplication
+                            (migration_id, iid_peer_id, iid_old_id, iid_new_id,
+                             old_id_new_mac, old_id_new_linklocal);
+                    if (dup_data != null && dup_data is DuplicationData)
+                    {
+                        DuplicationData _dup_data = (DuplicationData)dup_data;
+                        w0.peer_mac = _dup_data.peer_old_id_new_mac;
+                        w0.peer_linklocal = _dup_data.peer_old_id_new_linklocal;
+                        w1.peer_nodeid = _dup_data.peer_new_id;
+                    }
+                    // Add direct route to gateway from the updated link-local of the old identity
+                    //  to the link-local that is now set on the updated identity-arc.
+                    netns_manager.add_gateway(ns_temp, old_id_new_linklocal, w0.peer_linklocal, old_id_new_dev);
+                }
+            }
+            return new_identity.id;
         }
 
         public void add_arc_identity(IIdmgmtArc arc, NodeID id, NodeID peer_nodeid, string peer_mac, string peer_linklocal)
@@ -360,7 +490,107 @@ namespace Netsukuku
         (int migration_id, IIdentityID peer_id, IIdentityID old_id, IIdentityID new_id,
          string old_id_new_mac, string old_id_new_linklocal, CallerInfo? caller = null)
         {
-            error("not implemented yet");
+            if (caller == null) tasklet.exit_tasklet(null);
+            IIdmgmtArc? arc = stub_factory.get_arc(caller);
+            if (arc == null) tasklet.exit_tasklet(null);
+            if (! (peer_id is NodeIDAsIdentityID)) tasklet.exit_tasklet(null);
+            if (! (old_id is NodeIDAsIdentityID)) tasklet.exit_tasklet(null);
+            if (! (new_id is NodeIDAsIdentityID)) tasklet.exit_tasklet(null);
+            NodeID my_old_id = ((NodeIDAsIdentityID)peer_id).id;
+            NodeID my_peer_old_id = ((NodeIDAsIdentityID)old_id).id;
+            NodeID my_peer_new_id = ((NodeIDAsIdentityID)new_id).id;
+            string my_peer_old_id_new_mac = old_id_new_mac;
+            string my_peer_old_id_new_linklocal = old_id_new_linklocal;
+            MigrationData? migration_data = null;
+            foreach (MigrationData pending_migration in pending_migrations)
+            {
+                if (pending_migration.old_id.equals(my_old_id) &&
+                    pending_migration.migration_id == migration_id)
+                {
+                    migration_data = pending_migration;
+                    break;
+                }
+            }
+            if (migration_data != null)
+            {
+                while (! migration_data.ready) tasklet.ms_wait(50);
+                string ir_dev = arc.get_dev();
+                DuplicationData ret = new DuplicationData();
+                ret.peer_new_id = migration_data.new_id;
+                ret.peer_old_id_new_mac = migration_data.devices[ir_dev].old_id_new_mac;
+                ret.peer_old_id_new_linklocal = migration_data.devices[ir_dev].old_id_new_linklocal;
+                return ret;
+            }
+            else
+            {
+                // immediately answer <null> and in a tasklet add the new identity-arc.
+                NeighbourMigratedTasklet ts = new NeighbourMigratedTasklet();
+                ts.mgr = this;
+                ts.my_old_id = my_old_id;
+                ts.my_peer_old_id = my_peer_old_id;
+                ts.my_peer_new_id = my_peer_new_id;
+                ts.my_peer_old_id_new_mac = my_peer_old_id_new_mac;
+                ts.my_peer_old_id_new_linklocal = my_peer_old_id_new_linklocal;
+                ts.arc = arc;
+                tasklet.spawn(ts);
+                return null;
+            }
+        }
+        private void neighbour_migrated
+        (NodeID my_old_id,
+         NodeID my_peer_old_id,
+         NodeID my_peer_new_id,
+         string my_peer_old_id_new_mac,
+         string my_peer_old_id_new_linklocal,
+         IIdmgmtArc arc)
+        {
+            // search old identity-arc
+            string s_arc = arc_to_string(arc);
+            string k = @"$(my_old_id.id)-$(s_arc)";
+            if (! identity_arcs.has_key(k)) return;
+            IdentityArc new_identity_arc = new IdentityArc();
+            new_identity_arc.peer_nodeid = my_peer_new_id;
+            foreach (IdentityArc identity_arc in identity_arcs[k])
+            {
+                if (identity_arc.peer_nodeid.equals(my_peer_old_id))
+                {
+                    new_identity_arc.peer_linklocal = identity_arc.peer_linklocal;
+                    new_identity_arc.peer_mac = identity_arc.peer_mac;
+                    identity_arc.peer_linklocal = my_peer_old_id_new_linklocal;
+                    identity_arc.peer_mac = my_peer_old_id_new_mac;
+                    identity_arc_changed(arc, my_old_id, identity_arc);
+                    // Add direct route to gateway from the updated link-local of the old identity
+                    //  to the link-local that is now set on the updated identity-arc.
+                    string ns = namespaces[@"$(my_old_id.id)"];
+                    string dev = arc.get_dev();
+                    string pseudodev = handled_nics[@"$(my_old_id.id)-$(dev)"].dev;
+                    string linklocal = handled_nics[@"$(my_old_id.id)-$(dev)"].linklocal;
+                    string peer_linklocal = identity_arc.peer_linklocal;
+                    netns_manager.add_gateway(ns, linklocal, peer_linklocal, pseudodev);
+                }
+            }
+            identity_arcs[k].add(new_identity_arc);
+            identity_arc_added(arc, my_old_id, new_identity_arc);
+        }
+        private class NeighbourMigratedTasklet : Object, ITaskletSpawnable
+        {
+            public IdentityManager mgr;
+            public NodeID my_old_id;
+            public NodeID my_peer_old_id;
+            public NodeID my_peer_new_id;
+            public string my_peer_old_id_new_mac;
+            public string my_peer_old_id_new_linklocal;
+            public IIdmgmtArc arc;
+            public void * func()
+            {
+                mgr.neighbour_migrated(my_old_id,
+                                       my_peer_old_id,
+                                       my_peer_new_id,
+                                       my_peer_old_id_new_mac,
+                                       my_peer_old_id_new_linklocal,
+                                       arc);
+                return null;
+            }
         }
     }
 
@@ -408,6 +638,15 @@ namespace Netsukuku
         {
             return peer_linklocal;
         }
+
+        public IdentityArc copy()
+        {
+            IdentityArc ret = new IdentityArc();
+            ret.peer_nodeid = peer_nodeid;
+            ret.peer_mac = peer_mac;
+            ret.peer_linklocal = peer_linklocal;
+            return ret;
+        }
     }
 
     internal class NodeIDAsIdentityID : Object, IIdentityID
@@ -424,6 +663,11 @@ namespace Netsukuku
 
     internal class MigrationData : Object
     {
+        public MigrationData()
+        {
+            devices = new HashMap<string, MigrationDeviceData>();
+        }
+
         public bool ready;
         public int migration_id;
         public NodeID old_id;
@@ -433,7 +677,6 @@ namespace Netsukuku
 
     internal class MigrationDeviceData : Object
     {
-        public string real_mac;
         public string old_id_new_dev;
         public string old_id_new_mac;
         public string old_id_new_linklocal;
