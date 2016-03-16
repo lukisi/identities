@@ -518,6 +518,7 @@ namespace Netsukuku
                 error("Trying to force remove an identity-arc between main identities.");
             string k = key_for_identity_arcs(id, arc);
             identity_arcs[k].remove(to_remove);
+            identity_arc_removed(arc, id, peer_nodeid);
             // remove a gateway with netns-manager
             string ns = namespaces[@"$(id.id)"];
             string dev = arc.get_dev();
