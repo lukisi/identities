@@ -534,12 +534,23 @@ namespace Netsukuku
             if (main_id == id) error("Trying to remove main identity.");
             NodeIDAsIdentityID iid_id = new NodeIDAsIdentityID();
             iid_id.id = _id;
-            foreach (IIdmgmtArc arc in arc_list)
+            foreach (IIdmgmtArc arc in arc_list.keys)
             {
                 stub_factory.get_stub(arc).notify_identity_removed(iid_id);
+                string s_arc = arc_to_string(arc);
+                identity_arcs.unset(@"$(id)-$(s_arc)");
             }
-            
-            error("not implemented yet");
+            string ns = namespaces[@"$(id)"];
+            netns_manager.flush_table(ns);
+            foreach (string dev in dev_list)
+            {
+                string pseudodev = handled_nics[@"$(id)-$(dev)"].dev;
+                netns_manager.delete_pseudodev(ns, pseudodev);
+                handled_nics.unset(@"$(id)-$(dev)");
+            }
+            netns_manager.delete_namespace(ns);
+            namespaces.unset(@"$(id)");
+            id_list.remove(id);
         }
 
         /* Signals
