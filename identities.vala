@@ -28,6 +28,7 @@ namespace Netsukuku
         public abstract void add_address(string ns, string pseudo_dev, string linklocal);
         public abstract void add_gateway(string ns, string linklocal_src, string linklocal_dst, string dev);
         public abstract void remove_gateway(string ns, string linklocal_src, string linklocal_dst, string dev);
+        public abstract void flush_table(string ns);
         public abstract void delete_pseudodev(string ns, string pseudo_dev);
         public abstract void delete_namespace(string ns);
     }
@@ -530,6 +531,14 @@ namespace Netsukuku
         public void remove_identity(NodeID _id)
         {
             Identity id = find_identity(_id);
+            if (main_id == id) error("Trying to remove main identity.");
+            NodeIDAsIdentityID iid_id = new NodeIDAsIdentityID();
+            iid_id.id = _id;
+            foreach (IIdmgmtArc arc in arc_list)
+            {
+                stub_factory.get_stub(arc).notify_identity_removed(iid_id);
+            }
+            
             error("not implemented yet");
         }
 
@@ -542,6 +551,40 @@ namespace Netsukuku
 
         /* Remotable methods
          */
+
+        public void notify_identity_removed (IIdentityID id, CallerInfo? caller = null)
+        {
+            if (caller == null) tasklet.exit_tasklet(null);
+            IIdmgmtArc? arc = stub_factory.get_arc(caller);
+            if (arc == null) tasklet.exit_tasklet(null);
+            if (! (id is NodeIDAsIdentityID)) tasklet.exit_tasklet(null);
+            NodeID my_peer_id = ((NodeIDAsIdentityID)id).id;
+            // Immediately answer and then continue in a tasklet.
+            NeighbourIdentityRemovedTasklet ts = new NeighbourIdentityRemovedTasklet();
+            ts.mgr = this;
+            ts.my_peer_id = my_peer_id;
+            ts.arc = arc;
+            tasklet.spawn(ts);
+        }
+        private void neighbour_identity_removed
+        (NodeID my_peer_id,
+         IIdmgmtArc arc)
+        {
+            // Remove identity-arc for any identities of mine that is connected to my_peer_id.
+            // TODO
+        }
+        private class NeighbourIdentityRemovedTasklet : Object, ITaskletSpawnable
+        {
+            public IdentityManager mgr;
+            public NodeID my_peer_id;
+            public IIdmgmtArc arc;
+            public void * func()
+            {
+                mgr.neighbour_identity_removed(my_peer_id,
+                                       arc);
+                return null;
+            }
+        }
 
         public IIdentityID get_peer_main_id (CallerInfo? caller = null)
         {
