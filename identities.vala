@@ -548,29 +548,30 @@ namespace Netsukuku
             string s_arc = arc_to_string(arc);
             string k = @"$(my_old_id.id)-$(s_arc)";
             if (! identity_arcs.has_key(k)) return;
-            IdentityArc new_identity_arc = new IdentityArc();
-            new_identity_arc.peer_nodeid = my_peer_new_id;
-            foreach (IdentityArc identity_arc in identity_arcs[k])
+            foreach (IdentityArc old_identity_arc in identity_arcs[k])
             {
-                if (identity_arc.peer_nodeid.equals(my_peer_old_id))
+                if (old_identity_arc.peer_nodeid.equals(my_peer_old_id))
                 {
-                    new_identity_arc.peer_linklocal = identity_arc.peer_linklocal;
-                    new_identity_arc.peer_mac = identity_arc.peer_mac;
-                    identity_arc.peer_linklocal = my_peer_old_id_new_linklocal;
-                    identity_arc.peer_mac = my_peer_old_id_new_mac;
-                    identity_arc_changed(arc, my_old_id, identity_arc);
+                    IdentityArc new_identity_arc = new IdentityArc();
+                    new_identity_arc.peer_nodeid = my_peer_new_id;
+                    new_identity_arc.peer_linklocal = old_identity_arc.peer_linklocal;
+                    new_identity_arc.peer_mac = old_identity_arc.peer_mac;
+                    old_identity_arc.peer_linklocal = my_peer_old_id_new_linklocal;
+                    old_identity_arc.peer_mac = my_peer_old_id_new_mac;
+                    identity_arc_changed(arc, my_old_id, old_identity_arc);
                     // Add direct route to gateway from the updated link-local of the old identity
                     //  to the link-local that is now set on the updated identity-arc.
                     string ns = namespaces[@"$(my_old_id.id)"];
                     string dev = arc.get_dev();
                     string pseudodev = handled_nics[@"$(my_old_id.id)-$(dev)"].dev;
                     string linklocal = handled_nics[@"$(my_old_id.id)-$(dev)"].linklocal;
-                    string peer_linklocal = identity_arc.peer_linklocal;
+                    string peer_linklocal = old_identity_arc.peer_linklocal;
                     netns_manager.add_gateway(ns, linklocal, peer_linklocal, pseudodev);
+                    identity_arcs[k].add(new_identity_arc);
+                    identity_arc_added(arc, my_old_id, new_identity_arc);
+                    break;
                 }
             }
-            identity_arcs[k].add(new_identity_arc);
-            identity_arc_added(arc, my_old_id, new_identity_arc);
         }
         private class NeighbourMigratedTasklet : Object, ITaskletSpawnable
         {
