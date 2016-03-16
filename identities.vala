@@ -41,6 +41,8 @@ namespace Netsukuku
     public interface IIdmgmtArc : Object
     {
         public abstract string get_dev();
+        public abstract string get_peer_mac();
+        public abstract string get_peer_linklocal();
     }
 
     public interface IIdmgmtIdentityArc : Object
@@ -267,7 +269,7 @@ namespace Netsukuku
             handled_nics.unset(k);
         }
 
-        public void add_arc(IIdmgmtArc arc)
+        public void add_arc(IIdmgmtArc arc, bool add_main_identities_arc=true)
         {
             assert(! arc_list.has_key(arc));
             add_arc_to_list(arc);
@@ -275,6 +277,15 @@ namespace Netsukuku
             {
                 string k = key_for_identity_arcs(id.id, arc);
                 identity_arcs[k] = new ArrayList<IdentityArc>();
+            }
+            if (add_main_identities_arc)
+            {
+                IIdentityID _peer_id = stub_factory.get_stub(arc).get_peer_main_id();
+                if (_peer_id is NodeIDAsIdentityID)
+                {
+                    NodeID peer_id = ((NodeIDAsIdentityID)_peer_id).id;
+                    add_arc_identity(arc, main_id.id, peer_id, arc.get_peer_mac(), arc.get_peer_linklocal());
+                }
             }
         }
 
@@ -511,6 +522,13 @@ namespace Netsukuku
 
         /* Remotable methods
          */
+
+        public IIdentityID get_peer_main_id (CallerInfo? caller = null)
+        {
+            NodeIDAsIdentityID ret = new NodeIDAsIdentityID();
+            ret.id = main_id.id;
+            return ret;
+        }
 
         public IDuplicationData? match_duplication
         (int migration_id, IIdentityID peer_id, IIdentityID old_id, IIdentityID new_id,
