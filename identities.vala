@@ -196,6 +196,37 @@ namespace Netsukuku
             assert_not_reached();
         }
 
+        // Add association for an identity-arc
+        private void add_in_identity_arcs(NodeID my_nodeid, IIdmgmtArc arc, NodeID peer_nodeid,
+                                          string peer_mac, string peer_linklocal)
+        {
+            IdentityArc new_identity_arc = new IdentityArc();
+            new_identity_arc.peer_nodeid = peer_nodeid;
+            new_identity_arc.peer_linklocal = peer_linklocal;
+            new_identity_arc.peer_mac = peer_mac;
+            string k = key_for_identity_arcs(my_nodeid, arc);
+            identity_arcs[k].add(new_identity_arc);
+            identity_arc_added(arc, my_nodeid, new_identity_arc);
+        }
+
+        // Retrieve IdentityArc from associations
+        private IdentityArc? get_from_identity_arcs(NodeID my_nodeid, IIdmgmtArc arc, NodeID peer_nodeid)
+        {
+            string k = key_for_identity_arcs(my_nodeid, arc);
+            if (! identity_arcs.has_key(k)) return null;
+            foreach (IdentityArc ret in identity_arcs[k])
+            {
+                if (ret.peer_nodeid.equals(peer_nodeid)) return ret;
+            }
+            return null;
+        }
+
+        private string key_for_identity_arcs(NodeID my_nodeid, IIdmgmtArc arc)
+        {
+            string s_arc = arc_to_string(arc);
+            return @"$(my_nodeid.id)-$(s_arc)";
+        }
+
         /* Public input methods
          */
 
@@ -240,36 +271,32 @@ namespace Netsukuku
         {
             assert(! arc_list.has_key(arc));
             add_arc_to_list(arc);
-            string s_arc = arc_to_string(arc);
             foreach (Identity id in id_list)
             {
-                string s_id = @"$(id)";
-                string k = @"$(s_id)-$(s_arc)";
+                string k = key_for_identity_arcs(id.id, arc);
                 identity_arcs[k] = new ArrayList<IdentityArc>();
             }
         }
 
         public void remove_arc(IIdmgmtArc arc)
         {
-            string s_arc = arc_to_string(arc);
             // First, for all the connectivity identities
             foreach (Identity id in id_list) if (id != main_id)
             {
-                string s_id = @"$(id)";
-                string k = @"$(s_id)-$(s_arc)";
+                string k = key_for_identity_arcs(id.id, arc);
                 foreach (IdentityArc id_arc in identity_arcs[k])
                 {
-                    string ns = namespaces[s_id];
+                    string ns = namespaces[@"$(id)"];
                     string dev = arc.get_dev();
-                    string pseudodev = handled_nics[@"$(s_id)-$(dev)"].dev;
-                    string linklocal = handled_nics[@"$(s_id)-$(dev)"].linklocal;
+                    string pseudodev = handled_nics[@"$(id)-$(dev)"].dev;
+                    string linklocal = handled_nics[@"$(id)-$(dev)"].linklocal;
                     string peer_linklocal = id_arc.peer_linklocal;
                     netns_manager.remove_gateway(ns, linklocal, peer_linklocal, pseudodev);
                 }
                 identity_arcs.unset(k);
             }
             // Then, for the main identity
-            string k = @"$(main_id)-$(s_arc)";
+            string k = key_for_identity_arcs(main_id.id, arc);
             identity_arcs.unset(k);
             // Finally remove the arc from the collection
             arc_list.unset(arc);
@@ -298,9 +325,7 @@ namespace Netsukuku
 
         public Gee.List<IIdmgmtIdentityArc> get_identity_arcs(IIdmgmtArc arc, NodeID id)
         {
-            string s_arc = arc_to_string(arc);
-            string s_id = @"$(id.id)";
-            string k = @"$(s_id)-$(s_arc)";
+            string k = key_for_identity_arcs(id, arc);
             assert(identity_arcs.has_key(k));
             return identity_arcs[k];
         }
@@ -418,9 +443,9 @@ namespace Netsukuku
             // Duplication of all identity-arcs.
             foreach (IIdmgmtArc arc0 in arc_list.keys)
             {
-                string s_arc0 = arc_to_string(arc0);
-                string k_old = @"$(old_identity)-$(s_arc0)";
-                string k_new = @"$(new_identity)-$(s_arc0)";
+                string k_old = key_for_identity_arcs(old_identity.id, arc0);
+                string k_new = key_for_identity_arcs(new_identity.id, arc0);
+                key_for_identity_arcs(old_identity.id, arc0);
                 // prepare list of identity-arcs of new_identity
                 identity_arcs[k_new] = new ArrayList<IdentityArc>();
                 // retrieve the identity-arcs of old_identity
@@ -462,7 +487,8 @@ namespace Netsukuku
 
         public void add_arc_identity(IIdmgmtArc arc, NodeID id, NodeID peer_nodeid, string peer_mac, string peer_linklocal)
         {
-            error("not implemented yet");
+            add_in_identity_arcs(id, arc, peer_nodeid, peer_mac, peer_linklocal);
+            // TODO
         }
 
         public void remove_arc_identity(IIdmgmtArc arc, NodeID id, NodeID peer_nodeid)
@@ -526,7 +552,7 @@ namespace Netsukuku
                 // immediately answer <null> and in a tasklet add the new identity-arc.
                 NeighbourMigratedTasklet ts = new NeighbourMigratedTasklet();
                 ts.mgr = this;
-                ts.my_old_id = my_old_id;
+                ts.my_id = my_old_id; // in this case my id remains invariated
                 ts.my_peer_old_id = my_peer_old_id;
                 ts.my_peer_new_id = my_peer_new_id;
                 ts.my_peer_old_id_new_mac = my_peer_old_id_new_mac;
@@ -537,46 +563,36 @@ namespace Netsukuku
             }
         }
         private void neighbour_migrated
-        (NodeID my_old_id,
+        (NodeID my_id,
          NodeID my_peer_old_id,
          NodeID my_peer_new_id,
          string my_peer_old_id_new_mac,
          string my_peer_old_id_new_linklocal,
          IIdmgmtArc arc)
         {
-            // search old identity-arc
-            string s_arc = arc_to_string(arc);
-            string k = @"$(my_old_id.id)-$(s_arc)";
-            if (! identity_arcs.has_key(k)) return;
-            foreach (IdentityArc old_identity_arc in identity_arcs[k])
-            {
-                if (old_identity_arc.peer_nodeid.equals(my_peer_old_id))
-                {
-                    IdentityArc new_identity_arc = new IdentityArc();
-                    new_identity_arc.peer_nodeid = my_peer_new_id;
-                    new_identity_arc.peer_linklocal = old_identity_arc.peer_linklocal;
-                    new_identity_arc.peer_mac = old_identity_arc.peer_mac;
-                    old_identity_arc.peer_linklocal = my_peer_old_id_new_linklocal;
-                    old_identity_arc.peer_mac = my_peer_old_id_new_mac;
-                    identity_arc_changed(arc, my_old_id, old_identity_arc);
-                    // Add direct route to gateway from the updated link-local of the old identity
-                    //  to the link-local that is now set on the updated identity-arc.
-                    string ns = namespaces[@"$(my_old_id.id)"];
-                    string dev = arc.get_dev();
-                    string pseudodev = handled_nics[@"$(my_old_id.id)-$(dev)"].dev;
-                    string linklocal = handled_nics[@"$(my_old_id.id)-$(dev)"].linklocal;
-                    string peer_linklocal = old_identity_arc.peer_linklocal;
-                    netns_manager.add_gateway(ns, linklocal, peer_linklocal, pseudodev);
-                    identity_arcs[k].add(new_identity_arc);
-                    identity_arc_added(arc, my_old_id, new_identity_arc);
-                    break;
-                }
-            }
+            // Search old identity-arc
+            IdentityArc? old_identity_arc = get_from_identity_arcs(my_id, arc, my_peer_old_id);
+            if (old_identity_arc == null) return;
+            // Add new identity-arc
+            add_in_identity_arcs(my_id, arc, my_peer_new_id,
+                                 old_identity_arc.peer_mac, old_identity_arc.peer_linklocal);
+            // Modify old identity-arc
+            old_identity_arc.peer_linklocal = my_peer_old_id_new_linklocal;
+            old_identity_arc.peer_mac = my_peer_old_id_new_mac;
+            identity_arc_changed(arc, my_id, old_identity_arc);
+            // Add direct route to gateway from the link-local of my identity for this arc
+            //  to the updated peer-link-local of the old identity-arc.
+            string ns = namespaces[@"$(my_id.id)"];
+            string dev = arc.get_dev();
+            string pseudodev = handled_nics[@"$(my_id.id)-$(dev)"].dev;
+            string linklocal = handled_nics[@"$(my_id.id)-$(dev)"].linklocal;
+            string peer_linklocal = old_identity_arc.peer_linklocal;
+            netns_manager.add_gateway(ns, linklocal, peer_linklocal, pseudodev);
         }
         private class NeighbourMigratedTasklet : Object, ITaskletSpawnable
         {
             public IdentityManager mgr;
-            public NodeID my_old_id;
+            public NodeID my_id;
             public NodeID my_peer_old_id;
             public NodeID my_peer_new_id;
             public string my_peer_old_id_new_mac;
@@ -584,7 +600,7 @@ namespace Netsukuku
             public IIdmgmtArc arc;
             public void * func()
             {
-                mgr.neighbour_migrated(my_old_id,
+                mgr.neighbour_migrated(my_id,
                                        my_peer_old_id,
                                        my_peer_new_id,
                                        my_peer_old_id_new_mac,
