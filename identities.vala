@@ -499,12 +499,31 @@ namespace Netsukuku
         public void add_arc_identity(IIdmgmtArc arc, NodeID id, NodeID peer_nodeid, string peer_mac, string peer_linklocal)
         {
             add_in_identity_arcs(id, arc, peer_nodeid, peer_mac, peer_linklocal);
-            // TODO
+            // Do we need to add a gateway with netns-manager?
+            if ((! main_id.id.equals(id)) || (peer_linklocal != arc.get_peer_linklocal()))
+            {
+                string ns = namespaces[@"$(id.id)"];
+                string dev = arc.get_dev();
+                string pseudodev = handled_nics[@"$(id.id)-$(dev)"].dev;
+                string linklocal = handled_nics[@"$(id.id)-$(dev)"].linklocal;
+                netns_manager.add_gateway(ns, linklocal, peer_linklocal, pseudodev);
+            }
         }
 
         public void remove_arc_identity(IIdmgmtArc arc, NodeID id, NodeID peer_nodeid)
         {
-            error("not implemented yet");
+            IdentityArc? to_remove = get_from_identity_arcs(id, arc, peer_nodeid);
+            if (to_remove == null) return;
+            if (main_id.id.equals(id) && to_remove.peer_linklocal == arc.get_peer_linklocal())
+                error("Trying to force remove an identity-arc between main identities.");
+            string k = key_for_identity_arcs(id, arc);
+            identity_arcs[k].remove(to_remove);
+            // remove a gateway with netns-manager
+            string ns = namespaces[@"$(id.id)"];
+            string dev = arc.get_dev();
+            string pseudodev = handled_nics[@"$(id.id)-$(dev)"].dev;
+            string linklocal = handled_nics[@"$(id.id)-$(dev)"].linklocal;
+            netns_manager.remove_gateway(ns, linklocal, to_remove.peer_linklocal, pseudodev);
         }
 
         public void remove_identity(NodeID _id)
