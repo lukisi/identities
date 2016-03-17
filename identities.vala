@@ -241,7 +241,6 @@ namespace Netsukuku
         public void remove_handled_nic(string dev)
         {
             assert(dev in dev_list);
-            assert(dev_list.size > 2);
             // First, for all the connectivity identities (some of them might be removed)
             ArrayList<Identity> id_list_copy = new ArrayList<Identity>();
             id_list_copy.add_all(id_list);
@@ -250,10 +249,9 @@ namespace Netsukuku
                 string k = @"$(id)-$(dev)";
                 if (handled_nics.has_key(k))
                 {
-                    HandledNic hnic = handled_nics[k];
-                    // hnic.dev is a pseudodev that has to be deleted.
                     string ns = namespaces[@"$(id)"];
-                    netns_manager.delete_pseudodev(ns, hnic.dev);
+                    string pseudodev = handled_nics[k].dev;
+                    netns_manager.delete_pseudodev(ns, pseudodev);
                     // remove from association
                     handled_nics.unset(k);
                     // check if "id" still has some nics.
@@ -261,13 +259,33 @@ namespace Netsukuku
                     if (cur_nics.is_empty)
                     {
                         // "id" has no more nics, it has to be removed.
-                        remove_identity(id.id);
+                        // Start a tasklet to remove the identity after a while.
+                        LaunchRemoveIdentityTasklet ts = new LaunchRemoveIdentityTasklet();
+                        ts.mgr = this;
+                        ts.id = id;
+                        tasklet.spawn(ts);
                     }
                 }
             }
             // Then, for the main identity
             string k = @"$(main_id)-$(dev)";
             handled_nics.unset(k);
+            // Then remove from the dev_list
+            dev_list.remove(dev);
+        }
+        private void launch_remove_identity(Identity id)
+        {
+            remove_identity(id.id);
+        }
+        private class LaunchRemoveIdentityTasklet : Object, ITaskletSpawnable
+        {
+            public IdentityManager mgr;
+            public Identity id;
+            public void * func()
+            {
+                mgr.launch_remove_identity(id);
+                return null;
+            }
         }
 
         public void add_arc(IIdmgmtArc arc, bool add_main_identities_arc=true)
