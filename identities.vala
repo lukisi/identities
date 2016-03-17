@@ -301,7 +301,7 @@ namespace Netsukuku
             if (_peer_id is NodeIDAsIdentityID)
             {
                 NodeID peer_id = ((NodeIDAsIdentityID)_peer_id).id;
-                add_arc_identity(arc, main_id.id, peer_id, arc.get_peer_mac(), arc.get_peer_linklocal());
+                add_identity_arc(arc, main_id.id, peer_id, arc.get_peer_mac(), arc.get_peer_linklocal());
             }
         }
 
@@ -315,7 +315,7 @@ namespace Netsukuku
                 foreach (IdentityArc id_arc in identity_arcs[k])
                     peer_id_list.add(id_arc.peer_nodeid);
                 foreach (NodeID peer_id in peer_id_list)
-                    remove_arc_identity(arc, id.id, peer_id);
+                    remove_identity_arc(arc, id.id, peer_id);
                 assert(identity_arcs[k].is_empty);
                 identity_arcs.unset(k);
             }
@@ -506,7 +506,7 @@ namespace Netsukuku
             return new_identity.id;
         }
 
-        public void add_arc_identity(IIdmgmtArc arc, NodeID id, NodeID peer_nodeid, string peer_mac, string peer_linklocal)
+        public void add_identity_arc(IIdmgmtArc arc, NodeID id, NodeID peer_nodeid, string peer_mac, string peer_linklocal)
         {
             add_in_identity_arcs(id, arc, peer_nodeid, peer_mac, peer_linklocal);
             // Do we need to add a gateway with netns-manager?
@@ -520,7 +520,7 @@ namespace Netsukuku
             }
         }
 
-        public void remove_arc_identity(IIdmgmtArc arc, NodeID id, NodeID peer_nodeid)
+        public void remove_identity_arc(IIdmgmtArc arc, NodeID id, NodeID peer_nodeid)
         {
             IdentityArc? to_remove = get_from_identity_arcs(id, arc, peer_nodeid);
             if (to_remove == null) return;
