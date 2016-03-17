@@ -307,24 +307,18 @@ namespace Netsukuku
 
         public void remove_arc(IIdmgmtArc arc)
         {
-            // First, for all the connectivity identities
-            foreach (Identity id in id_list) if (id != main_id)
+            // For all the identities
+            foreach (Identity id in id_list)
             {
                 string k = key_for_identity_arcs(id.id, arc);
+                ArrayList<NodeID> peer_id_list = new ArrayList<NodeID>();
                 foreach (IdentityArc id_arc in identity_arcs[k])
-                {
-                    string ns = namespaces[@"$(id)"];
-                    string dev = arc.get_dev();
-                    string pseudodev = handled_nics[@"$(id)-$(dev)"].dev;
-                    string linklocal = handled_nics[@"$(id)-$(dev)"].linklocal;
-                    string peer_linklocal = id_arc.peer_linklocal;
-                    netns_manager.remove_gateway(ns, linklocal, peer_linklocal, pseudodev);
-                }
+                    peer_id_list.add(id_arc.peer_nodeid);
+                foreach (NodeID peer_id in peer_id_list)
+                    remove_arc_identity(arc, id.id, peer_id);
+                assert(identity_arcs[k].is_empty);
                 identity_arcs.unset(k);
             }
-            // Then, for the main identity
-            string k = key_for_identity_arcs(main_id.id, arc);
-            identity_arcs.unset(k);
             // Finally remove the arc from the collection
             arc_list.unset(arc);
         }
