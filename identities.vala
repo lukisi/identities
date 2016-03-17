@@ -288,7 +288,7 @@ namespace Netsukuku
             }
         }
 
-        public void add_arc(IIdmgmtArc arc, bool add_main_identities_arc=true)
+        public void add_arc(IIdmgmtArc arc)
         {
             assert(! arc_list.has_key(arc));
             add_arc_to_list(arc);
@@ -297,14 +297,11 @@ namespace Netsukuku
                 string k = key_for_identity_arcs(id.id, arc);
                 identity_arcs[k] = new ArrayList<IdentityArc>();
             }
-            if (add_main_identities_arc)
+            IIdentityID _peer_id = stub_factory.get_stub(arc).get_peer_main_id();
+            if (_peer_id is NodeIDAsIdentityID)
             {
-                IIdentityID _peer_id = stub_factory.get_stub(arc).get_peer_main_id();
-                if (_peer_id is NodeIDAsIdentityID)
-                {
-                    NodeID peer_id = ((NodeIDAsIdentityID)_peer_id).id;
-                    add_arc_identity(arc, main_id.id, peer_id, arc.get_peer_mac(), arc.get_peer_linklocal());
-                }
+                NodeID peer_id = ((NodeIDAsIdentityID)_peer_id).id;
+                add_arc_identity(arc, main_id.id, peer_id, arc.get_peer_mac(), arc.get_peer_linklocal());
             }
         }
 
