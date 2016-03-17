@@ -508,9 +508,11 @@ namespace Netsukuku
 
         public void add_identity_arc(IIdmgmtArc arc, NodeID id, NodeID peer_nodeid, string peer_mac, string peer_linklocal)
         {
+            bool is_main_identity_arc = main_id.id.equals(id);
+            is_main_identity_arc = is_main_identity_arc && peer_linklocal == arc.get_peer_linklocal();
             add_in_identity_arcs(id, arc, peer_nodeid, peer_mac, peer_linklocal);
             // Do we need to add a gateway with netns-manager?
-            if ((! main_id.id.equals(id)) || (peer_linklocal != arc.get_peer_linklocal()))
+            if (! is_main_identity_arc)
             {
                 string ns = namespaces[@"$(id.id)"];
                 string dev = arc.get_dev();
@@ -524,17 +526,20 @@ namespace Netsukuku
         {
             IdentityArc? to_remove = get_from_identity_arcs(id, arc, peer_nodeid);
             if (to_remove == null) return;
-            if (main_id.id.equals(id) && to_remove.peer_linklocal == arc.get_peer_linklocal())
-                error("Trying to force remove an identity-arc between main identities.");
+            bool is_main_identity_arc = main_id.id.equals(id);
+            is_main_identity_arc = is_main_identity_arc && to_remove.peer_linklocal == arc.get_peer_linklocal();
             string k = key_for_identity_arcs(id, arc);
             identity_arcs[k].remove(to_remove);
             identity_arc_removed(arc, id, peer_nodeid);
-            // remove a gateway with netns-manager
-            string ns = namespaces[@"$(id.id)"];
-            string dev = arc.get_dev();
-            string pseudodev = handled_nics[@"$(id.id)-$(dev)"].dev;
-            string linklocal = handled_nics[@"$(id.id)-$(dev)"].linklocal;
-            netns_manager.remove_gateway(ns, linklocal, to_remove.peer_linklocal, pseudodev);
+            // Do we need to remove a gateway with netns-manager?
+            if (! is_main_identity_arc)
+            {
+                string ns = namespaces[@"$(id.id)"];
+                string dev = arc.get_dev();
+                string pseudodev = handled_nics[@"$(id.id)-$(dev)"].dev;
+                string linklocal = handled_nics[@"$(id.id)-$(dev)"].linklocal;
+                netns_manager.remove_gateway(ns, linklocal, to_remove.peer_linklocal, pseudodev);
+            }
         }
 
         public void remove_identity(NodeID _id)
@@ -591,7 +596,10 @@ namespace Netsukuku
          IIdmgmtArc arc)
         {
             // Remove identity-arc for any identities of mine that is connected to my_peer_id.
-            // TODO
+            foreach (Identity id in id_list)
+            {
+                remove_identity_arc(arc, id.id, my_peer_id);
+            }
         }
         private class NeighbourIdentityRemovedTasklet : Object, ITaskletSpawnable
         {
