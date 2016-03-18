@@ -186,7 +186,8 @@ namespace Netsukuku
             handled_nic.dev = dev;
             handled_nic.mac = mac;
             handled_nic.linklocal = linklocal;
-            handled_nics[@"$(main_id)-$(dev)"] = handled_nic;
+            string k = key_for_handled_nics(main_id.id, dev);
+            handled_nics[k] = handled_nic;
         }
 
         // Retrieve instance of Identity given the NodeID of one of my identities.
@@ -230,6 +231,11 @@ namespace Netsukuku
             return @"$(my_nodeid.id)-$(s_arc)";
         }
 
+        private string key_for_handled_nics(NodeID my_nodeid, string dev)
+        {
+            return @"$(my_nodeid.id)-$(dev)";
+        }
+
         /* Public input methods
          */
 
@@ -246,7 +252,7 @@ namespace Netsukuku
             id_list_copy.add_all(id_list);
             foreach (Identity id in id_list_copy) if (id != main_id)
             {
-                string k = @"$(id)-$(dev)";
+                string k = key_for_handled_nics(id.id, dev);
                 if (handled_nics.has_key(k))
                 {
                     string ns = namespaces[@"$(id)"];
@@ -268,7 +274,7 @@ namespace Netsukuku
                 }
             }
             // Then, for the main identity
-            string k = @"$(main_id)-$(dev)";
+            string k = key_for_handled_nics(main_id.id, dev);
             handled_nics.unset(k);
             // Then remove from the dev_list
             dev_list.remove(dev);
@@ -342,6 +348,13 @@ namespace Netsukuku
         {
             assert(namespaces.has_key(@"$(id.id)"));
             return namespaces[@"$(id.id)"];
+        }
+
+        public string get_pseudodev(NodeID id, string dev)
+        {
+            string k = key_for_handled_nics(id, dev);
+            assert(handled_nics.has_key(k));
+            return handled_nics[k].dev;
         }
 
         public Gee.List<IIdmgmtIdentityArc> get_identity_arcs(IIdmgmtArc arc, NodeID id)
@@ -449,8 +462,8 @@ namespace Netsukuku
                 old_id_new_hnic.dev = pseudo_dev;
                 old_id_new_hnic.mac = pseudo_mac;
                 old_id_new_hnic.linklocal = old_id_new_linklocal;
-                string old_id_k = @"$(old_identity)-$(dev)";
-                string new_id_k = @"$(new_identity)-$(dev)";
+                string old_id_k = key_for_handled_nics(old_identity.id, dev);
+                string new_id_k = key_for_handled_nics(new_identity.id, dev);
                 handled_nics[new_id_k] = handled_nics[old_id_k];
                 handled_nics[old_id_k] = old_id_new_hnic;
                 MigrationDeviceData device_data = new MigrationDeviceData();
@@ -516,8 +529,9 @@ namespace Netsukuku
             {
                 string ns = namespaces[@"$(id.id)"];
                 string dev = arc.get_dev();
-                string pseudodev = handled_nics[@"$(id.id)-$(dev)"].dev;
-                string linklocal = handled_nics[@"$(id.id)-$(dev)"].linklocal;
+                string k = key_for_handled_nics(id, dev);
+                string pseudodev = handled_nics[k].dev;
+                string linklocal = handled_nics[k].linklocal;
                 netns_manager.add_gateway(ns, linklocal, peer_linklocal, pseudodev);
             }
         }
@@ -536,8 +550,9 @@ namespace Netsukuku
             {
                 string ns = namespaces[@"$(id.id)"];
                 string dev = arc.get_dev();
-                string pseudodev = handled_nics[@"$(id.id)-$(dev)"].dev;
-                string linklocal = handled_nics[@"$(id.id)-$(dev)"].linklocal;
+                k = key_for_handled_nics(id, dev);
+                string pseudodev = handled_nics[k].dev;
+                string linklocal = handled_nics[k].linklocal;
                 netns_manager.remove_gateway(ns, linklocal, to_remove.peer_linklocal, pseudodev);
             }
         }
@@ -558,9 +573,10 @@ namespace Netsukuku
             netns_manager.flush_table(ns);
             foreach (string dev in dev_list)
             {
-                string pseudodev = handled_nics[@"$(id)-$(dev)"].dev;
+                string k = key_for_handled_nics(id.id, dev);
+                string pseudodev = handled_nics[k].dev;
                 netns_manager.delete_pseudodev(ns, pseudodev);
-                handled_nics.unset(@"$(id)-$(dev)");
+                handled_nics.unset(k);
             }
             netns_manager.delete_namespace(ns);
             namespaces.unset(@"$(id)");
@@ -693,8 +709,9 @@ namespace Netsukuku
             //  to the updated peer-link-local of the old identity-arc.
             string ns = namespaces[@"$(my_id.id)"];
             string dev = arc.get_dev();
-            string pseudodev = handled_nics[@"$(my_id.id)-$(dev)"].dev;
-            string linklocal = handled_nics[@"$(my_id.id)-$(dev)"].linklocal;
+            string k = key_for_handled_nics(my_id, dev);
+            string pseudodev = handled_nics[k].dev;
+            string linklocal = handled_nics[k].linklocal;
             string peer_linklocal = old_identity_arc.peer_linklocal;
             netns_manager.add_gateway(ns, linklocal, peer_linklocal, pseudodev);
         }
