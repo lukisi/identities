@@ -267,11 +267,23 @@ namespace Netsukuku
                 string k = key_for_identity_arcs(id.id, arc);
                 identity_arcs[k] = new ArrayList<IdentityArc>();
             }
-            IIdentityID _peer_id = stub_factory.get_stub(arc).get_peer_main_id();
-            if (_peer_id is NodeIDAsIdentityID)
-            {
-                NodeID peer_id = ((NodeIDAsIdentityID)_peer_id).id;
-                add_identity_arc(arc, main_id.id, peer_id, arc.get_peer_mac(), arc.get_peer_linklocal());
+            try {
+                IIdentityID _peer_id;
+                try {
+                    _peer_id = stub_factory.get_stub(arc).get_peer_main_id();
+                } catch (StubError e) {
+                    throw new ArcCommunicationError.GENERIC(@"StubError: $(e.message)");
+                } catch (DeserializeError e) {
+                    throw new ArcCommunicationError.GENERIC(@"DeserializeError: $(e.message)");
+                }
+                if (_peer_id is NodeIDAsIdentityID)
+                {
+                    NodeID peer_id = ((NodeIDAsIdentityID)_peer_id).id;
+                    add_identity_arc(arc, main_id.id, peer_id, arc.get_peer_mac(), arc.get_peer_linklocal());
+                }
+            } catch (ArcCommunicationError e) {
+                // start a tasklet that after a while will remove this bad arc.
+                // TODO
             }
         }
 
@@ -594,7 +606,11 @@ namespace Netsukuku
             iid_id.id = _id;
             foreach (IIdmgmtArc arc in arc_list.keys)
             {
-                stub_factory.get_stub(arc).notify_identity_removed(iid_id);
+                try {
+                    stub_factory.get_stub(arc).notify_identity_removed(iid_id);
+                } catch (StubError e ) {
+                } catch (DeserializeError e ) {
+                }
                 string s_arc = arc_to_string(arc);
                 identity_arcs.unset(@"$(id)-$(s_arc)");
             }
