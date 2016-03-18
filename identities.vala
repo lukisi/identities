@@ -352,7 +352,7 @@ namespace Netsukuku
             migration_data.ready = false;
             pending_migrations.add(migration_data);
             // Start a tasklet to remove the data from memory if the module does
-            // not take care after a reasonable time.,
+            // not take care after a reasonable time.
             CleanupPendingMigrationTasklet ts = new CleanupPendingMigrationTasklet();
             ts.mgr = this;
             ts.migration_id = migration_id;
@@ -442,7 +442,6 @@ namespace Netsukuku
             {
                 string k_old = key_for_identity_arcs(old_identity.id, arc0);
                 string k_new = key_for_identity_arcs(new_identity.id, arc0);
-                key_for_identity_arcs(old_identity.id, arc0);
                 // prepare list of identity-arcs of new_identity
                 identity_arcs[k_new] = new ArrayList<IdentityArc>();
                 // retrieve the identity-arcs of old_identity
