@@ -1,6 +1,7 @@
 identities.c
 identities.h
 identities.vapi
+testsuites/test_identitymanager_1/test_identitymanager_1.c
 Makefile.in
 Makefile
 *.lo
