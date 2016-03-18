@@ -53,6 +53,7 @@ namespace Netsukuku
         public abstract string get_peer_linklocal();
     }
 
+    internal errordomain ArcCommunicationError {GENERIC}
     internal ITasklet tasklet;
     public class IdentityManager : Object, IIdentityManagerSkeleton
     {
@@ -440,45 +441,111 @@ namespace Netsukuku
             // Duplication of all identity-arcs.
             foreach (IIdmgmtArc arc0 in arc_list.keys)
             {
-                string k_old = key_for_identity_arcs(old_identity.id, arc0);
-                string k_new = key_for_identity_arcs(new_identity.id, arc0);
-                // prepare list of identity-arcs of new_identity
-                identity_arcs[k_new] = new ArrayList<IdentityArc>();
-                // retrieve the identity-arcs of old_identity
-                if (! identity_arcs.has_key(k_old)) continue;
-                foreach (IdentityArc w0 in identity_arcs[k_old])
-                {
-                    IdentityArc w1 = w0.copy();
-                    identity_arcs[k_new].add(w1);
-                    NodeIDAsIdentityID iid_peer_id = new NodeIDAsIdentityID();
-                    iid_peer_id.id = w0.peer_nodeid;
-                    NodeIDAsIdentityID iid_old_id = new NodeIDAsIdentityID();
-                    iid_old_id.id = migration_data.old_id;
-                    NodeIDAsIdentityID iid_new_id = new NodeIDAsIdentityID();
-                    iid_new_id.id = migration_data.new_id;
-                    string arc0_dev = arc0.get_dev();
-                    string old_id_new_dev =
-                        migration_data.devices[arc0_dev].old_id_new_dev;
-                    string old_id_new_mac =
-                        migration_data.devices[arc0_dev].old_id_new_mac;
-                    string old_id_new_linklocal =
-                        migration_data.devices[arc0_dev].old_id_new_linklocal;
-                    IDuplicationData? dup_data = stub_factory.get_stub(arc0).match_duplication
-                            (migration_id, iid_peer_id, iid_old_id, iid_new_id,
-                             old_id_new_mac, old_id_new_linklocal);
-                    if (dup_data != null && dup_data is DuplicationData)
+                try {
+                    string k_old = key_for_identity_arcs(old_identity.id, arc0);
+                    string k_new = key_for_identity_arcs(new_identity.id, arc0);
+                    // prepare list of identity-arcs of new_identity
+                    identity_arcs[k_new] = new ArrayList<IdentityArc>();
+                    // retrieve the identity-arcs of old_identity
+                    if (! identity_arcs.has_key(k_old)) continue;
+                    foreach (IdentityArc w0 in identity_arcs[k_old])
                     {
-                        DuplicationData _dup_data = (DuplicationData)dup_data;
-                        w0.peer_mac = _dup_data.peer_old_id_new_mac;
-                        w0.peer_linklocal = _dup_data.peer_old_id_new_linklocal;
-                        w1.peer_nodeid = _dup_data.peer_new_id;
+                        IdentityArc w1 = w0.copy();
+                        identity_arcs[k_new].add(w1);
+                        // start a timed task
+                        string arc0_dev = arc0.get_dev();
+                        string old_id_new_dev =
+                            migration_data.devices[arc0_dev].old_id_new_dev;
+                        string old_id_new_linklocal =
+                            migration_data.devices[arc0_dev].old_id_new_linklocal;
+                        CallMatchDuplicationTasklet ts = new CallMatchDuplicationTasklet();
+                        ts.mgr = this;
+                        ts.arc0 = arc0;
+                        ts.migration_id = migration_id;
+                        ts.iid_peer_id = new NodeIDAsIdentityID();
+                        ts.iid_peer_id.id = w0.peer_nodeid;
+                        ts.iid_old_id = new NodeIDAsIdentityID();
+                        ts.iid_old_id.id = migration_data.old_id;
+                        ts.iid_new_id = new NodeIDAsIdentityID();
+                        ts.iid_new_id.id = migration_data.new_id;
+                        ts.old_id_new_mac =
+                            migration_data.devices[arc0_dev].old_id_new_mac;
+                        ts.old_id_new_linklocal =
+                            migration_data.devices[arc0_dev].old_id_new_linklocal;
+                        IDuplicationData? dup_data;
+                        try {
+                            dup_data = (IDuplicationData?)do_timed_task(ts, new Timer(5000));
+                        } catch (StubError e) {
+                            throw new ArcCommunicationError.GENERIC(@"StubError: $(e.message)");
+                        } catch (DeserializeError e) {
+                            throw new ArcCommunicationError.GENERIC(@"DeserializeError: $(e.message)");
+                        } catch (TaskTimeoutError e) {
+                            throw new ArcCommunicationError.GENERIC("TaskTimeoutError: 5 seconds expired.");
+                        } catch (Error e) {
+                            assert_not_reached();
+                        }
+                        if (dup_data != null && dup_data is DuplicationData)
+                        {
+                            DuplicationData _dup_data = (DuplicationData)dup_data;
+                            w0.peer_mac = _dup_data.peer_old_id_new_mac;
+                            w0.peer_linklocal = _dup_data.peer_old_id_new_linklocal;
+                            w1.peer_nodeid = _dup_data.peer_new_id;
+                        }
+                        // Add direct route to gateway from the updated link-local of the old identity
+                        //  to the link-local that is now set on the updated identity-arc.
+                        netns_manager.add_gateway(ns_temp, old_id_new_linklocal, w0.peer_linklocal, old_id_new_dev);
                     }
-                    // Add direct route to gateway from the updated link-local of the old identity
-                    //  to the link-local that is now set on the updated identity-arc.
-                    netns_manager.add_gateway(ns_temp, old_id_new_linklocal, w0.peer_linklocal, old_id_new_dev);
+                } catch (ArcCommunicationError e) {
+                    // start a tasklet that after a while will remove this bad arc.
+                    // TODO
                 }
             }
             return new_identity.id;
+        }
+        private IDuplicationData? call_match_duplication
+                    (IIdmgmtArc arc0, int migration_id, NodeIDAsIdentityID iid_peer_id,
+                     NodeIDAsIdentityID iid_old_id, NodeIDAsIdentityID iid_new_id,
+                     string old_id_new_mac, string old_id_new_linklocal)
+                    throws StubError, DeserializeError
+        {
+            return stub_factory.get_stub(arc0).match_duplication
+                (migration_id, iid_peer_id, iid_old_id, iid_new_id,
+                 old_id_new_mac, old_id_new_linklocal);
+        }
+        private class CallMatchDuplicationTasklet : Object, ITaskletSpawnable, ITaskletTimedTask
+        {
+            public IdentityManager mgr;
+            public IIdmgmtArc arc0;
+            public int migration_id;
+            public NodeIDAsIdentityID iid_peer_id;
+            public NodeIDAsIdentityID iid_old_id;
+            public NodeIDAsIdentityID iid_new_id;
+            public string old_id_new_mac;
+            public string old_id_new_linklocal;
+            private IDuplicationData? ret;
+            private Error e;
+            private bool ok;
+            private bool func_terminated;
+            public void * func()
+            {
+                ok = false;
+                try {
+                    ret = mgr.call_match_duplication(
+                                arc0, migration_id, iid_peer_id, iid_old_id,
+                                iid_new_id, old_id_new_mac, old_id_new_linklocal);
+                    ok = true;
+                } catch (Error e) {
+                    this.e = e;
+                }
+                func_terminated = true;
+                return null;
+            }
+            public Object get_retval() throws Error
+            {
+                assert(func_terminated);
+                if (! ok) throw e;
+                return ret;
+            }
         }
 
         public void add_identity_arc(IIdmgmtArc arc, NodeID id, NodeID peer_nodeid, string peer_mac, string peer_linklocal)
@@ -785,6 +852,65 @@ namespace Netsukuku
         public string old_id_new_dev;
         public string old_id_new_mac;
         public string old_id_new_linklocal;
+    }
+
+    /* Add to the tasklet-system support for a ''timed task''.
+     */
+
+    internal class Timer : Object, ITimedTaskTimer
+    {
+        private TimeVal start;
+        private long msec_ttl;
+        public Timer(long msec_ttl)
+        {
+            start = TimeVal();
+            start.get_current_time();
+            this.msec_ttl = msec_ttl;
+        }
+
+        private long get_lap()
+        {
+            TimeVal lap = TimeVal();
+            lap.get_current_time();
+            long sec = lap.tv_sec - start.tv_sec;
+            long usec = lap.tv_usec - start.tv_usec;
+            if (usec < 0)
+            {
+                usec += 1000000;
+                sec--;
+            }
+            return sec*1000000 + usec;
+        }
+
+        public bool is_expired()
+        {
+            return get_lap() > msec_ttl*1000;
+        }
+    }
+
+    internal errordomain TaskTimeoutError {GENERIC}
+    internal interface ITimedTaskTimer : Object
+    {
+        public abstract bool is_expired();
+    }
+    internal interface ITaskletTimedTask : Object, ITaskletSpawnable
+    {
+        public abstract Object get_retval() throws Error;
+    }
+    internal Object do_timed_task(ITaskletTimedTask ts, ITimedTaskTimer timer) throws TaskTimeoutError, Error
+    {
+        ITaskletHandle th = tasklet.spawn(ts);
+        while (true)
+        {
+            tasklet.ms_wait(5);
+            if (! th.is_running()) break;
+            if (timer.is_expired())
+            {
+                th.kill();
+                throw new TaskTimeoutError.GENERIC("TaskTimeoutError");
+            }
+        }
+        return ts.get_retval();
     }
 }
 
