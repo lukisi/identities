@@ -48,7 +48,7 @@ libidentities_la_LIBADD = \
 
 test_identitymanager_1_SOURCES = \
 	testsuites/test_identitymanager_1/test_identitymanager_1.vala \
-	identities.vapi \
+	testsuites/test_identitymanager_1/identities.vala \
 	$(NULL)
 
 test_identitymanager_1_VALAFLAGS = \
@@ -66,8 +66,8 @@ test_identitymanager_1_CPPFLAGS = \
 	$(GEE_CFLAGS) \
 	$(TASKLETSYSTEM_CFLAGS) \
 	$(PTHTASKLET_CFLAGS) \
+	$(NTKDCOMMON_CFLAGS) \
 	$(NTKDRPC_CFLAGS) \
-	-I$(srcdir) \
 	$(NULL)
 
 test_identitymanager_1_LDADD = \
@@ -75,8 +75,8 @@ test_identitymanager_1_LDADD = \
 	$(GEE_LIBS) \
 	$(TASKLETSYSTEM_LIBS) \
 	$(PTHTASKLET_LIBS) \
+	$(NTKDCOMMON_LIBS) \
 	$(NTKDRPC_LIBS) \
-	$(builddir)/libidentities.la \
 	$(NULL)
 
 MAINTAINERCLEANFILES = \
