@@ -47,11 +47,12 @@ void main()
     SampleModuleManager r = (SampleModuleManager)im0.get_identity_module(id0, "sample_manager");
     print(@"it has sample_manager $(r.id)\n");
     // Add an arc
+    NodeID first_id_arc0 = new NodeID(8376574);
     FakeArc arc0 = new FakeArc();
     arc0.dev = "eth0";
     arc0.peer_mac = "42:66:C0:CF:72:82";
     arc0.peer_linklocal = "169.254.54.32";
-    arc0.fake_stub.nodeid = new NodeID(8376574);
+    arc0.fake_stub.first_main_id = first_id_arc0;
     im0.add_arc(arc0);
     // list identity-arcs in arc0 (for now the only arc)
     Gee.List<IIdmgmtIdentityArc> x = im0.get_identity_arcs(arc0, id0);
@@ -77,8 +78,41 @@ void main()
     print(@"id0 = $(id0.id).\n");
     print(@"it handles $(im0.get_pseudodev(id0, "eth0")) on namespace \"$(im0.get_namespace(id0))\".\n");
     print(@"   and $(im0.get_pseudodev(id0, "wlan0")) on namespace \"$(im0.get_namespace(id0))\".\n");
-    // now the neighbour migrates.
-    
+    // Now the neighbour (first_id_arc0) migrates. It has 2 identity-arcs with the current node, one
+    //  with id0 and another with id1.
+    print(@"On the neighbor, id#$(first_id_arc0.id) migrates.\n");
+    NodeID second_id_arc0 = new NodeID(5275984);
+    print(@"It informs my id#$(id0.id) and asks if it participates.\n");
+    testsuite_tasklet.ms_wait(100); // simulate latency
+    IDuplicationData? answer = im0.match_duplication(110,
+                          make_iid(id0),
+                          make_iid(first_id_arc0),
+                          make_iid(second_id_arc0),
+                          "old_id_new_mac", "old_id_new_mac",
+                          new FakeCallerInfo(arc0));
+    assert(answer == null);
+    print(@" answer is <null>.\n");
+    print(@"It informs my id#$(id1.id) and asks if it participates.\n");
+    testsuite_tasklet.ms_wait(100); // simulate latency
+    answer = im0.match_duplication(110,
+                          make_iid(id1),
+                          make_iid(first_id_arc0),
+                          make_iid(second_id_arc0),
+                          "old_id_new_mac", "old_id_new_mac",
+                          new FakeCallerInfo(arc0));
+    assert(answer == null);
+    print(@" answer is <null>.\n");
+    // wait a little, because the new identity-arcs are built in a tasklet.
+    testsuite_tasklet.ms_wait(100);
+    // list identity-arcs in arc0
+    x = im0.get_identity_arcs(arc0, id0);
+    print(@"id0 now has $(x.size) identity-arcs.\n");
+    //...
+
+    x = im0.get_identity_arcs(arc0, id1);
+    print(@"id1 now has $(x.size) identity-arcs.\n");
+    //...
+
     // Exit
     PthTaskletImplementer.kill();
 }
@@ -121,18 +155,22 @@ class FakeIdentityManagerStub : Object, IIdentityManagerStub
     public FakeIdentityManagerStub()
     {
         id_fake_idmgr_stub = next_id_fake_idmgr_stub++;
+        already_called = false;
     }
     public int id_fake_idmgr_stub;
-    public NodeID nodeid;
+    public NodeID first_main_id;
+    private bool already_called;
 
     public IIdentityID get_peer_main_id() throws StubError, DeserializeError
     {
-        assert(nodeid != null);
+        assert(first_main_id != null);
+        assert(! already_called);
+        already_called = true;
         print(@"FakeIdentityManagerStub#$(id_fake_idmgr_stub): call start, simulate latency...\n");
         testsuite_tasklet.ms_wait(5);
-        print(@"FakeIdentityManagerStub#$(id_fake_idmgr_stub): get_peer_main_id returns $(nodeid.id).\n");
+        print(@"FakeIdentityManagerStub#$(id_fake_idmgr_stub): get_peer_main_id returns $(first_main_id.id).\n");
         NodeIDAsIdentityID ret = new NodeIDAsIdentityID();
-        ret.id = nodeid;
+        ret.id = first_main_id;
         return ret;
     }
 
@@ -239,8 +277,20 @@ class FakeStubFactory : Object, IIdmgmtStubFactory
 
     public IIdmgmtArc? get_arc(CallerInfo caller)
     {
+        if (caller is FakeCallerInfo) return ((FakeCallerInfo)caller).arc;
         error("not implemented yet");
     }
+}
+
+class FakeCallerInfo : CallerInfo
+{
+    public FakeCallerInfo(IIdmgmtArc arc)
+    {
+        base();
+        this.arc = arc;
+    }
+
+    public IIdmgmtArc arc;
 }
 
 class SampleModuleManager : Object
@@ -260,6 +310,13 @@ string randommac()
         i = Random.int_range(0, 9);
         ret += @"$(i)";
     }
+    return ret;
+}
+
+NodeIDAsIdentityID make_iid(NodeID id)
+{
+    NodeIDAsIdentityID ret = new NodeIDAsIdentityID();
+    ret.id = id;
     return ret;
 }
 
