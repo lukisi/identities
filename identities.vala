@@ -502,7 +502,9 @@ namespace Netsukuku
                             w0.peer_mac = _dup_data.peer_old_id_new_mac;
                             w0.peer_linklocal = _dup_data.peer_old_id_new_linklocal;
                             w1.peer_nodeid = _dup_data.peer_new_id;
+                            identity_arc_changed(arc0, old_id, w0);
                         }
+                        identity_arc_added(arc0, new_identity.id, w1);
                         // Add direct route to gateway from the updated link-local of the old identity
                         //  to the link-local that is now set on the updated identity-arc.
                         netns_manager.add_gateway(ns_temp, old_id_new_linklocal, w0.peer_linklocal, old_id_new_dev);
