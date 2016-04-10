@@ -28,8 +28,8 @@ void main()
     // Create the manager for this node. This creates first id.
     IdentityManager im0 = new IdentityManager(testsuite_tasklet,
             new ArrayList<string>.wrap({"eth0"}),
-            new ArrayList<string>.wrap({"B8:70:F4:9F:78:9B"}),
-            new ArrayList<string>.wrap({"169.254.12.34"}),
+            new ArrayList<string>.wrap({"82:77:05:80:02:65"}),
+            new ArrayList<string>.wrap({"169.254.28.181"}),
             new FakeNetnsManager(),
             new FakeStubFactory());
     // Get my first id.
@@ -38,7 +38,7 @@ void main()
     print(@"it handles $(im0.get_pseudodev(id0, "eth0")) on namespace \"$(im0.get_namespace(id0))\".\n");
     testsuite_tasklet.ms_wait(100);
     // Add a NIC
-    im0.add_handled_nic("wlan0", "CC:AF:78:2E:C8:B6", "169.254.45.67");
+    im0.add_handled_nic("wlan0", "32:02:11:40:75:71", "169.254.114.200");
     print(@"now also $(im0.get_pseudodev(id0, "wlan0")) on namespace \"$(im0.get_namespace(id0))\".\n");
     // Add an identity-module object to this id.
     SampleModuleManager sm0 = new SampleModuleManager();
@@ -50,15 +50,20 @@ void main()
     NodeID first_id_arc0 = new NodeID(8376574);
     FakeArc arc0 = new FakeArc();
     arc0.dev = "eth0";
-    arc0.peer_mac = "42:66:C0:CF:72:82";
-    arc0.peer_linklocal = "169.254.54.32";
+    arc0.peer_mac = "42:41:53:62:78:77";
+    arc0.peer_linklocal = "169.254.60.164";
     arc0.fake_stub.first_main_id = first_id_arc0;
     im0.add_arc(arc0);
-    // list identity-arcs in arc0 (for now the only arc)
-    Gee.List<IIdmgmtIdentityArc> x = im0.get_identity_arcs(arc0, id0);
-    print(@"id0 now has $(x.size) identity-arcs.\n");
-    IIdmgmtIdentityArc x0 = x[0];
-    print(@" 1. from $(id0.id) to $(x0.get_peer_nodeid().id) which has MAC $(x0.get_peer_mac()) linklocal $(x0.get_peer_linklocal()).\n");
+    // list identity-arcs in arc0
+    foreach (NodeID id in im0.get_id_list())
+    {
+        Gee.List<IIdmgmtIdentityArc> id_arcs = im0.get_identity_arcs(arc0, id);
+        print(@"id $(id.id) now has $(id_arcs.size) identity-arcs.\n");
+        foreach (IIdmgmtIdentityArc id_arc in id_arcs)
+        {
+            print(@" # $(id_arc.get_peer_nodeid().id) MAC $(id_arc.get_peer_mac()) linklocal $(id_arc.get_peer_linklocal()).\n");
+        }
+    }
     // wait a little
     testsuite_tasklet.ms_wait(100);
     // now we migrate
@@ -68,6 +73,16 @@ void main()
     print(@"id1 = $(id1.id).\n");
     print(@"it handles $(im0.get_pseudodev(id1, "eth0")) on namespace \"$(im0.get_namespace(id1))\".\n");
     print(@"   and $(im0.get_pseudodev(id1, "wlan0")) on namespace \"$(im0.get_namespace(id1))\".\n");
+    // list identity-arcs in arc0
+    foreach (NodeID id in im0.get_id_list())
+    {
+        Gee.List<IIdmgmtIdentityArc> id_arcs = im0.get_identity_arcs(arc0, id);
+        print(@"id $(id.id) now has $(id_arcs.size) identity-arcs.\n");
+        foreach (IIdmgmtIdentityArc id_arc in id_arcs)
+        {
+            print(@" # $(id_arc.get_peer_nodeid().id) MAC $(id_arc.get_peer_mac()) linklocal $(id_arc.get_peer_linklocal()).\n");
+        }
+    }
     // Add an identity-module object to this id.
     SampleModuleManager sm1 = new SampleModuleManager();
     sm1.id = 654;
@@ -88,7 +103,7 @@ void main()
                           make_iid(id0),
                           make_iid(first_id_arc0),
                           make_iid(second_id_arc0),
-                          "old_id_new_mac", "old_id_new_mac",
+                          "32:23:10:73:57:11", "169.254.22.235",
                           new FakeCallerInfo(arc0));
     assert(answer == null);
     print(@" answer is <null>.\n");
@@ -98,21 +113,22 @@ void main()
                           make_iid(id1),
                           make_iid(first_id_arc0),
                           make_iid(second_id_arc0),
-                          "old_id_new_mac", "old_id_new_mac",
+                          "32:23:10:73:57:11", "169.254.22.235",
                           new FakeCallerInfo(arc0));
     assert(answer == null);
     print(@" answer is <null>.\n");
     // wait a little, because the new identity-arcs are built in a tasklet.
     testsuite_tasklet.ms_wait(100);
     // list identity-arcs in arc0
-    x = im0.get_identity_arcs(arc0, id0);
-    print(@"id0 now has $(x.size) identity-arcs.\n");
-    //...
-
-    x = im0.get_identity_arcs(arc0, id1);
-    print(@"id1 now has $(x.size) identity-arcs.\n");
-    //...
-
+    foreach (NodeID id in im0.get_id_list())
+    {
+        Gee.List<IIdmgmtIdentityArc> id_arcs = im0.get_identity_arcs(arc0, id);
+        print(@"id $(id.id) now has $(id_arcs.size) identity-arcs.\n");
+        foreach (IIdmgmtIdentityArc id_arc in id_arcs)
+        {
+            print(@" # $(id_arc.get_peer_nodeid().id) MAC $(id_arc.get_peer_mac()) linklocal $(id_arc.get_peer_linklocal()).\n");
+        }
+    }
     // Exit
     PthTaskletImplementer.kill();
 }
@@ -312,6 +328,105 @@ string randommac()
     }
     return ret;
 }
+
+/*
+"42:15:41:60:05:82", "169.254.137.31"
+"52:34:31:47:75:05", "169.254.132.30"
+"72:06:60:63:27:57", "169.254.250.37"
+"82:28:75:03:81:12", "169.254.43.172"
+"82:83:61:78:14:44", "169.254.227.43"
+"32:88:22:47:55:31", "169.254.81.96"
+"82:38:82:55:02:76", "169.254.101.254"
+"82:40:86:73:17:06", "169.254.170.48"
+"62:40:02:16:33:63", "169.254.133.88"
+"42:67:58:21:55:45", "169.254.2.120"
+"42:32:25:74:77:15", "169.254.41.103"
+"02:87:88:84:70:12", "169.254.88.242"
+"22:74:70:61:44:58", "169.254.21.108"
+"12:50:16:06:75:84", "169.254.132.233"
+"42:45:17:46:77:04", "169.254.153.149"
+"82:24:58:66:64:51", "169.254.48.81"
+"52:42:08:51:61:67", "169.254.211.45"
+"22:66:10:42:82:70", "169.254.209.122"
+"12:62:78:20:20:08", "169.254.55.25"
+"22:80:75:37:61:04", "169.254.11.230"
+"32:24:74:50:26:62", "169.254.111.34"
+"32:46:78:26:70:60", "169.254.208.167"
+"82:82:68:18:27:67", "169.254.78.74"
+"62:45:54:15:47:07", "169.254.135.105"
+"32:56:68:61:27:77", "169.254.29.9"
+"22:82:28:26:76:21", "169.254.242.222"
+"72:16:52:01:62:05", "169.254.23.246"
+"22:80:54:03:25:34", "169.254.42.98"
+"72:78:00:58:03:03", "169.254.156.23"
+"82:57:62:66:51:77", "169.254.21.35"
+"22:85:75:84:26:30", "169.254.191.41"
+"22:00:46:38:35:01", "169.254.101.80"
+"22:75:73:17:67:21", "169.254.119.102"
+"72:08:45:16:23:18", "169.254.75.168"
+"82:72:58:07:43:66", "169.254.211.100"
+"72:12:21:64:17:50", "169.254.29.95"
+"12:64:35:58:64:88", "169.254.195.149"
+"22:12:84:03:67:17", "169.254.40.196"
+"62:41:47:58:56:51", "169.254.221.182"
+"32:34:72:46:54:72", "169.254.79.220"
+"12:35:25:86:40:62", "169.254.220.175"
+"02:73:08:41:84:33", "169.254.149.193"
+"72:10:30:73:85:21", "169.254.246.74"
+"72:06:56:04:67:53", "169.254.238.34"
+"82:00:46:15:71:75", "169.254.104.12"
+"62:17:14:51:75:41", "169.254.45.60"
+"72:04:62:17:34:86", "169.254.247.153"
+"42:14:48:81:83:08", "169.254.8.143"
+"62:12:14:08:58:24", "169.254.88.147"
+"52:81:18:47:56:30", "169.254.112.179"
+"42:21:35:44:40:76", "169.254.80.207"
+"42:18:01:64:58:03", "169.254.118.72"
+"32:41:36:30:58:24", "169.254.151.198"
+"52:10:31:48:53:72", "169.254.94.242"
+"72:38:23:26:70:48", "169.254.46.201"
+"22:46:50:15:48:36", "169.254.52.157"
+"42:05:58:85:64:77", "169.254.15.119"
+"82:32:35:55:36:01", "169.254.252.41"
+"62:17:86:34:30:84", "169.254.175.143"
+"52:13:74:04:85:21", "169.254.230.94"
+"12:21:33:21:30:38", "169.254.254.26"
+"22:62:25:44:07:80", "169.254.61.43"
+"22:07:65:22:43:36", "169.254.77.253"
+"02:34:65:44:06:24", "169.254.41.4"
+"52:22:17:83:45:08", "169.254.142.249"
+"82:55:02:67:63:01", "169.254.191.37"
+"62:85:08:80:73:01", "169.254.142.182"
+"72:80:28:14:15:00", "169.254.160.188"
+"02:76:52:53:24:37", "169.254.125.179"
+"22:50:48:71:10:62", "169.254.173.137"
+"42:33:71:50:67:45", "169.254.207.220"
+"12:42:34:03:74:05", "169.254.94.139"
+"42:37:33:03:12:82", "169.254.231.169"
+"62:00:00:12:42:75", "169.254.145.248"
+"62:60:00:86:85:22", "169.254.193.30"
+"72:70:85:43:02:17", "169.254.222.222"
+"42:04:12:53:77:28", "169.254.188.210"
+"22:58:11:54:78:61", "169.254.149.38"
+"32:38:75:54:01:55", "169.254.1.156"
+"52:70:37:26:54:01", "169.254.223.162"
+"82:48:76:88:85:64", "169.254.203.185"
+"42:26:62:50:61:82", "169.254.46.154"
+"22:68:68:84:17:58", "169.254.246.126"
+"02:77:25:25:16:18", "169.254.145.131"
+"42:16:76:47:42:61", "169.254.105.32"
+"32:38:41:84:42:13", "169.254.246.133"
+"22:71:25:68:12:28", "169.254.156.29"
+"42:37:81:86:30:87", "169.254.130.100"
+"12:65:63:63:54:28", "169.254.170.249"
+"82:40:31:84:42:80", "169.254.28.4"
+"52:22:02:57:24:18", "169.254.54.142"
+"72:41:54:30:58:48", "169.254.228.251"
+"32:87:77:84:63:56", "169.254.240.241"
+"32:60:07:77:53:67", "169.254.201.124"
+"02:11:66:13:75:22", "169.254.98.215"
+"52:03:76:58:56:43", "169.254.15.247"
+*/
 
 NodeIDAsIdentityID make_iid(NodeID id)
 {
