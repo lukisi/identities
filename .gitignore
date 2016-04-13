@@ -4,6 +4,11 @@ identities.vapi
 testsuites/test_identitymanager_1/test_identitymanager_1.c
 Makefile.in
 Makefile
+test_identitymanager_1
+.dirstamp
+*.log
+*.trs
+*.o
 *.lo
 *.la
 .deps
