@@ -19,7 +19,7 @@
 using Gee;
 using TaskletSystem;
 
-namespace Netsukuku
+namespace Netsukuku.Identities
 {
     public interface IIdmgmtNetnsManager : Object
     {

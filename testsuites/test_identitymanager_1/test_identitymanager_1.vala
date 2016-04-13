@@ -19,6 +19,7 @@
 using Gee;
 using TaskletSystem;
 using Netsukuku;
+using Netsukuku.Identities;
 
 ITasklet testsuite_tasklet;
 void main()
