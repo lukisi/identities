@@ -283,7 +283,21 @@ namespace Netsukuku.Identities
                 }
             } catch (ArcCommunicationError e) {
                 // start a tasklet that after a while will remove this bad arc.
-                // TODO
+                RemoveArcTasklet ts = new RemoveArcTasklet();
+                ts.mgr = this;
+                ts.arc = arc;
+                tasklet.spawn(ts);
+            }
+        }
+        private class RemoveArcTasklet : Object, ITaskletSpawnable
+        {
+            public IdentityManager mgr;
+            public IIdmgmtArc arc;
+            public void * func()
+            {
+                tasklet.ms_wait(10);
+                mgr.remove_arc(arc);
+                return null;
             }
         }
 
@@ -511,7 +525,10 @@ namespace Netsukuku.Identities
                     }
                 } catch (ArcCommunicationError e) {
                     // start a tasklet that after a while will remove this bad arc.
-                    // TODO
+                    RemoveArcTasklet ts = new RemoveArcTasklet();
+                    ts.mgr = this;
+                    ts.arc = arc0;
+                    tasklet.spawn(ts);
                 }
             }
             return new_identity.id;
