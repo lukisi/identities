@@ -608,10 +608,17 @@ namespace Netsukuku.Identities
             iid_id.id = _id;
             foreach (IIdmgmtArc arc in arc_list.keys)
             {
+                CallNotifyIdentityRemovedTasklet ts = new CallNotifyIdentityRemovedTasklet();
+                ts.mgr = this;
+                ts.arc0 = arc;
+                ts.iid_id = iid_id;
                 try {
-                    stub_factory.get_stub(arc).notify_identity_removed(iid_id);
-                } catch (StubError e ) {
-                } catch (DeserializeError e ) {
+                    do_timed_task(ts, new Timer(500));
+                } catch (StubError e) {
+                } catch (DeserializeError e) {
+                } catch (TaskTimeoutError e) {
+                } catch (Error e) {
+                    assert_not_reached();
                 }
                 string s_arc = arc_to_string(arc);
                 identity_arcs.unset(@"$(id)-$(s_arc)");
@@ -628,6 +635,41 @@ namespace Netsukuku.Identities
             netns_manager.delete_namespace(ns);
             namespaces.unset(@"$(id)");
             id_list.remove(id);
+        }
+        private void call_notify_identity_removed
+                    (IIdmgmtArc arc0, NodeIDAsIdentityID iid_id)
+                    throws StubError, DeserializeError
+        {
+            stub_factory.get_stub(arc0).notify_identity_removed(iid_id);
+        }
+        private class VoidClass : Object {}
+        private class CallNotifyIdentityRemovedTasklet : Object, ITaskletSpawnable, ITaskletTimedTask
+        {
+            public IdentityManager mgr;
+            public IIdmgmtArc arc0;
+            public NodeIDAsIdentityID iid_id;
+            private Error e;
+            private bool ok;
+            private bool func_terminated;
+            public void * func()
+            {
+                ok = false;
+                try {
+                    mgr.call_notify_identity_removed(
+                                arc0, iid_id);
+                    ok = true;
+                } catch (Error e) {
+                    this.e = e;
+                }
+                func_terminated = true;
+                return null;
+            }
+            public Object get_retval() throws Error
+            {
+                assert(func_terminated);
+                if (! ok) throw e;
+                return new VoidClass();
+            }
         }
 
         /* Signals
