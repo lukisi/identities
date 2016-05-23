@@ -297,6 +297,7 @@ namespace Netsukuku.Identities
             {
                 tasklet.ms_wait(10);
                 mgr.remove_arc(arc);
+                mgr.arc_removed(arc);
                 return null;
             }
         }
@@ -696,6 +697,7 @@ namespace Netsukuku.Identities
         public signal void identity_arc_added(IIdmgmtArc arc, NodeID id, IIdmgmtIdentityArc id_arc);
         public signal void identity_arc_changed(IIdmgmtArc arc, NodeID id, IIdmgmtIdentityArc id_arc);
         public signal void identity_arc_removed(IIdmgmtArc arc, NodeID id, NodeID peer_nodeid);
+        public signal void arc_removed(IIdmgmtArc arc);
 
         /* Remotable methods
          */
