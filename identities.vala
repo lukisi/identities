@@ -439,6 +439,8 @@ namespace Netsukuku.Identities
             // Build pseudodevs
             foreach (string dev in dev_list)
             {
+                string old_id_k = key_for_handled_nics(old_identity.id, dev);
+                if (! handled_nics.has_key(old_id_k)) continue;
                 string pseudo_dev = @"$(ns_temp)_$(dev)";
                 string pseudo_mac;
                 netns_manager.create_pseudodev(dev, ns_temp, pseudo_dev, out pseudo_mac);
@@ -452,7 +454,6 @@ namespace Netsukuku.Identities
                 old_id_new_hnic.dev = pseudo_dev;
                 old_id_new_hnic.mac = pseudo_mac;
                 old_id_new_hnic.linklocal = old_id_new_linklocal;
-                string old_id_k = key_for_handled_nics(old_identity.id, dev);
                 string new_id_k = key_for_handled_nics(new_identity.id, dev);
                 handled_nics[new_id_k] = handled_nics[old_id_k];
                 handled_nics[old_id_k] = old_id_new_hnic;
