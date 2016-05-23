@@ -340,10 +340,10 @@ namespace Netsukuku.Identities
             return namespaces[@"$(id.id)"];
         }
 
-        public string get_pseudodev(NodeID id, string dev)
+        public string? get_pseudodev(NodeID id, string dev)
         {
             string k = key_for_handled_nics(id, dev);
-            assert(handled_nics.has_key(k));
+            if (! handled_nics.has_key(k)) return null;
             return handled_nics[k].dev;
         }
 
