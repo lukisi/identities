@@ -371,6 +371,13 @@ namespace Netsukuku.Identities
             return id.modules[name];
         }
 
+        public void unset_identity_module(NodeID _id, string name)
+        {
+            Identity id = find_identity(_id);
+            assert(id.modules.has_key(name));
+            id.modules.unset(name);
+        }
+
         public void prepare_add_identity(int migration_id, NodeID old_id)
         {
             find_identity(old_id); // make sure identity is there
