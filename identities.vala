@@ -630,24 +630,34 @@ namespace Netsukuku.Identities
         {
             Identity id = find_identity(_id);
             if (main_id == id) error("Trying to remove main identity.");
-            NodeIDAsIdentityID iid_id = new NodeIDAsIdentityID();
-            iid_id.id = _id;
+            NodeIDAsIdentityID iid_my_id = new NodeIDAsIdentityID();
+            iid_my_id.id = _id;
             foreach (IIdmgmtArc arc in arc_list.keys)
             {
-                CallNotifyIdentityRemovedTasklet ts = new CallNotifyIdentityRemovedTasklet();
-                ts.mgr = this;
-                ts.arc0 = arc;
-                ts.iid_id = iid_id;
-                try {
-                    do_timed_task(ts, new Timer(500));
-                } catch (StubError e) {
-                } catch (DeserializeError e) {
-                } catch (TaskTimeoutError e) {
-                } catch (Error e) {
-                    assert_not_reached();
+                string k = key_for_identity_arcs(_id, arc);
+                if (! identity_arcs.has_key(k)) continue;
+                foreach (IdentityArc id_arc in identity_arcs[k])
+                {
+                    NodeIDAsIdentityID iid_peer_id = new NodeIDAsIdentityID();
+                    iid_peer_id.id = id_arc.get_peer_nodeid();
+                    CallNotifyIdentityArcRemovedTasklet ts = new CallNotifyIdentityArcRemovedTasklet();
+                    ts.mgr = this;
+                    ts.arc0 = arc;
+                    ts.iid_my_id = iid_my_id;
+                    ts.iid_peer_id = iid_peer_id;
+                    try {
+                        do_timed_task(ts, new Timer(500));
+                    } catch (StubError e) {
+                        break;
+                    } catch (DeserializeError e) {
+                        break;
+                    } catch (TaskTimeoutError e) {
+                        break;
+                    } catch (Error e) {
+                        assert_not_reached();
+                    }
                 }
-                string s_arc = arc_to_string(arc);
-                identity_arcs.unset(@"$(id)-$(s_arc)");
+                identity_arcs.unset(k);
             }
             string ns = namespaces[@"$(id)"];
             netns_manager.flush_table(ns);
@@ -662,18 +672,19 @@ namespace Netsukuku.Identities
             namespaces.unset(@"$(id)");
             id_list.remove(id);
         }
-        private void call_notify_identity_removed
-                    (IIdmgmtArc arc0, NodeIDAsIdentityID iid_id)
+        private void call_notify_identity_arc_removed
+                    (IIdmgmtArc arc0, NodeIDAsIdentityID iid_my_id, NodeIDAsIdentityID iid_peer_id)
                     throws StubError, DeserializeError
         {
-            stub_factory.get_stub(arc0).notify_identity_removed(iid_id);
+            stub_factory.get_stub(arc0).notify_identity_arc_removed(iid_my_id, iid_peer_id);
         }
         private class VoidClass : Object {}
-        private class CallNotifyIdentityRemovedTasklet : Object, ITaskletSpawnable, ITaskletTimedTask
+        private class CallNotifyIdentityArcRemovedTasklet : Object, ITaskletSpawnable, ITaskletTimedTask
         {
             public IdentityManager mgr;
             public IIdmgmtArc arc0;
-            public NodeIDAsIdentityID iid_id;
+            public NodeIDAsIdentityID iid_my_id;
+            public NodeIDAsIdentityID iid_peer_id;
             private Error e;
             private bool ok;
             private bool func_terminated;
@@ -681,8 +692,8 @@ namespace Netsukuku.Identities
             {
                 ok = false;
                 try {
-                    mgr.call_notify_identity_removed(
-                                arc0, iid_id);
+                    mgr.call_notify_identity_arc_removed(
+                                arc0, iid_my_id, iid_peer_id);
                     ok = true;
                 } catch (Error e) {
                     this.e = e;
@@ -709,39 +720,39 @@ namespace Netsukuku.Identities
         /* Remotable methods
          */
 
-        public void notify_identity_removed (IIdentityID id, CallerInfo? caller = null)
+        public void notify_identity_arc_removed (IIdentityID _peer_id, IIdentityID _my_id, CallerInfo? caller = null)
         {
             if (caller == null) tasklet.exit_tasklet(null);
             IIdmgmtArc? arc = stub_factory.get_arc(caller);
             if (arc == null) tasklet.exit_tasklet(null);
-            if (! (id is NodeIDAsIdentityID)) tasklet.exit_tasklet(null);
-            NodeID my_peer_id = ((NodeIDAsIdentityID)id).id;
+            if (! (_peer_id is NodeIDAsIdentityID)) tasklet.exit_tasklet(null);
+            if (! (_my_id is NodeIDAsIdentityID)) tasklet.exit_tasklet(null);
+            NodeID my_id = ((NodeIDAsIdentityID)_my_id).id;
+            NodeID peer_id = ((NodeIDAsIdentityID)_peer_id).id;
             // Immediately answer and then continue in a tasklet.
             NeighbourIdentityRemovedTasklet ts = new NeighbourIdentityRemovedTasklet();
             ts.mgr = this;
-            ts.my_peer_id = my_peer_id;
+            ts.my_id = my_id;
+            ts.peer_id = peer_id;
             ts.arc = arc;
             tasklet.spawn(ts);
         }
-        private void neighbour_identity_removed
-        (NodeID my_peer_id,
+        private void neighbour_identity_arc_removed
+        (NodeID my_id,
+         NodeID peer_id,
          IIdmgmtArc arc)
         {
-            // Remove identity-arc for any identities of mine that is connected to my_peer_id.
-            foreach (Identity id in id_list)
-            {
-                remove_identity_arc(arc, id.id, my_peer_id);
-            }
+            remove_identity_arc(arc, my_id, peer_id);
         }
         private class NeighbourIdentityRemovedTasklet : Object, ITaskletSpawnable
         {
             public IdentityManager mgr;
-            public NodeID my_peer_id;
+            public NodeID my_id;
+            public NodeID peer_id;
             public IIdmgmtArc arc;
             public void * func()
             {
-                mgr.neighbour_identity_removed(my_peer_id,
-                                       arc);
+                mgr.neighbour_identity_arc_removed(my_id, peer_id, arc);
                 return null;
             }
         }

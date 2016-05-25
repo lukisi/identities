@@ -205,7 +205,7 @@ class FakeIdentityManagerStub : Object, IIdentityManagerStub
         error("not implemented yet");
     }
 
-    public void notify_identity_removed(IIdentityID id) throws StubError, DeserializeError
+    public void notify_identity_arc_removed(IIdentityID peer_id, IIdentityID my_id) throws StubError, DeserializeError
     {
         error("not implemented yet");
     }
