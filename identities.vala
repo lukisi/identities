@@ -312,7 +312,10 @@ namespace Netsukuku.Identities
                 foreach (IdentityArc id_arc in identity_arcs[k])
                     peer_id_list.add(id_arc.peer_nodeid);
                 foreach (NodeID peer_id in peer_id_list)
+                {
+                    identity_arc_removing(arc, id.id, peer_id);
                     remove_identity_arc(arc, id.id, peer_id, false);
+                }
                 assert(identity_arcs[k].is_empty);
                 identity_arcs.unset(k);
             }
