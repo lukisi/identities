@@ -735,6 +735,7 @@ namespace Netsukuku.Identities
 
         public signal void identity_arc_added(IIdmgmtArc arc, NodeID id, IIdmgmtIdentityArc id_arc);
         public signal void identity_arc_changed(IIdmgmtArc arc, NodeID id, IIdmgmtIdentityArc id_arc);
+        public signal void identity_arc_removing(IIdmgmtArc arc, NodeID id, NodeID peer_nodeid);
         public signal void identity_arc_removed(IIdmgmtArc arc, NodeID id, NodeID peer_nodeid);
         public signal void arc_removed(IIdmgmtArc arc);
 
@@ -763,6 +764,9 @@ namespace Netsukuku.Identities
          NodeID peer_id,
          IIdmgmtArc arc)
         {
+            IdentityArc? to_remove = get_from_identity_arcs(my_id, arc, peer_id);
+            if (to_remove == null) return;
+            identity_arc_removing(arc, my_id, peer_id);
             remove_identity_arc(arc, my_id, peer_id, false);
         }
         private class NeighbourIdentityRemovedTasklet : Object, ITaskletSpawnable
