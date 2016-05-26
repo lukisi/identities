@@ -312,7 +312,7 @@ namespace Netsukuku.Identities
                 foreach (IdentityArc id_arc in identity_arcs[k])
                     peer_id_list.add(id_arc.peer_nodeid);
                 foreach (NodeID peer_id in peer_id_list)
-                    remove_identity_arc(arc, id.id, peer_id);
+                    remove_identity_arc(arc, id.id, peer_id, false);
                 assert(identity_arcs[k].is_empty);
                 identity_arcs.unset(k);
             }
@@ -605,25 +605,46 @@ namespace Netsukuku.Identities
             }
         }
 
-        public void remove_identity_arc(IIdmgmtArc arc, NodeID id, NodeID peer_nodeid)
+        public void remove_identity_arc(IIdmgmtArc arc, NodeID id, NodeID peer_nodeid, bool do_tell=true)
         {
             IdentityArc? to_remove = get_from_identity_arcs(id, arc, peer_nodeid);
             if (to_remove == null) return;
             bool is_main_identity_arc = main_id.id.equals(id);
             is_main_identity_arc = is_main_identity_arc && to_remove.peer_linklocal == arc.get_peer_linklocal();
-            string k = key_for_identity_arcs(id, arc);
-            identity_arcs[k].remove(to_remove);
-            identity_arc_removed(arc, id, peer_nodeid);
             // Do we need to remove a gateway with netns-manager?
             if (! is_main_identity_arc)
             {
                 string ns = namespaces[@"$(id.id)"];
                 string dev = arc.get_dev();
-                k = key_for_handled_nics(id, dev);
-                string pseudodev = handled_nics[k].dev;
-                string linklocal = handled_nics[k].linklocal;
+                string k1 = key_for_handled_nics(id, dev);
+                string pseudodev = handled_nics[k1].dev;
+                string linklocal = handled_nics[k1].linklocal;
                 netns_manager.remove_gateway(ns, linklocal, to_remove.peer_linklocal, pseudodev);
             }
+            string k = key_for_identity_arcs(id, arc);
+            identity_arcs[k].remove(to_remove);
+            if (do_tell)
+            {
+                // notify_identity_arc_removed through this arc
+                NodeIDAsIdentityID iid_my_id = new NodeIDAsIdentityID();
+                iid_my_id.id = id;
+                NodeIDAsIdentityID iid_peer_id = new NodeIDAsIdentityID();
+                iid_peer_id.id = peer_nodeid;
+                CallNotifyIdentityArcRemovedTasklet ts = new CallNotifyIdentityArcRemovedTasklet();
+                ts.mgr = this;
+                ts.arc0 = arc;
+                ts.iid_my_id = iid_my_id;
+                ts.iid_peer_id = iid_peer_id;
+                try {
+                    do_timed_task(ts, new Timer(500));
+                } catch (StubError e) {
+                } catch (DeserializeError e) {
+                } catch (TaskTimeoutError e) {
+                } catch (Error e) {
+                    assert_not_reached();
+                }
+            }
+            identity_arc_removed(arc, id, peer_nodeid);
         }
 
         public void remove_identity(NodeID _id)
@@ -742,7 +763,7 @@ namespace Netsukuku.Identities
          NodeID peer_id,
          IIdmgmtArc arc)
         {
-            remove_identity_arc(arc, my_id, peer_id);
+            remove_identity_arc(arc, my_id, peer_id, false);
         }
         private class NeighbourIdentityRemovedTasklet : Object, ITaskletSpawnable
         {
