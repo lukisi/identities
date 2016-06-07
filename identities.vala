@@ -755,7 +755,7 @@ namespace Netsukuku.Identities
             NodeID my_id = ((NodeIDAsIdentityID)_my_id).id;
             NodeID peer_id = ((NodeIDAsIdentityID)_peer_id).id;
             // Immediately answer and then continue in a tasklet.
-            NeighbourIdentityRemovedTasklet ts = new NeighbourIdentityRemovedTasklet();
+            NeighbourIdentityArcRemovedTasklet ts = new NeighbourIdentityArcRemovedTasklet();
             ts.mgr = this;
             ts.my_id = my_id;
             ts.peer_id = peer_id;
@@ -772,7 +772,7 @@ namespace Netsukuku.Identities
             identity_arc_removing(arc, my_id, peer_id);
             remove_identity_arc(arc, my_id, peer_id, false);
         }
-        private class NeighbourIdentityRemovedTasklet : Object, ITaskletSpawnable
+        private class NeighbourIdentityArcRemovedTasklet : Object, ITaskletSpawnable
         {
             public IdentityManager mgr;
             public NodeID my_id;
