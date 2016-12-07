@@ -749,7 +749,7 @@ namespace Netsukuku.Identities
          */
 
         public signal void identity_arc_added(IIdmgmtArc arc, NodeID id, IIdmgmtIdentityArc id_arc);
-        public signal void identity_arc_changed(IIdmgmtArc arc, NodeID id, IIdmgmtIdentityArc id_arc);
+        public signal void identity_arc_changed(IIdmgmtArc arc, NodeID id, IIdmgmtIdentityArc id_arc, bool only_neighbour_migrated=false);
         public signal void identity_arc_removing(IIdmgmtArc arc, NodeID id, NodeID peer_nodeid);
         public signal void identity_arc_removed(IIdmgmtArc arc, NodeID id, NodeID peer_nodeid);
         public signal void arc_removed(IIdmgmtArc arc);
@@ -871,7 +871,7 @@ namespace Netsukuku.Identities
             // Modify old identity-arc
             old_identity_arc.peer_linklocal = my_peer_old_id_new_linklocal;
             old_identity_arc.peer_mac = my_peer_old_id_new_mac;
-            identity_arc_changed(arc, my_id, old_identity_arc);
+            identity_arc_changed(arc, my_id, old_identity_arc, true);
             // Add direct route to gateway from the link-local of my identity for this arc
             //  to the updated peer-link-local of the old identity-arc.
             string ns = namespaces[@"$(my_id.id)"];
