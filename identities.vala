@@ -166,7 +166,7 @@ namespace Netsukuku.Identities
         }
 
         // Add association for an identity-arc
-        private void add_in_identity_arcs(NodeID my_nodeid, IIdmgmtArc arc, NodeID peer_nodeid,
+        private IdentityArc add_in_identity_arcs(NodeID my_nodeid, IIdmgmtArc arc, NodeID peer_nodeid,
                                           string peer_mac, string peer_linklocal)
         {
             IdentityArc new_identity_arc = new IdentityArc();
@@ -175,7 +175,7 @@ namespace Netsukuku.Identities
             new_identity_arc.peer_mac = peer_mac;
             string k = key_for_identity_arcs(my_nodeid, arc);
             identity_arcs[k].add(new_identity_arc);
-            identity_arc_added(arc, my_nodeid, new_identity_arc);
+            return new_identity_arc;
         }
 
         // Retrieve IdentityArc from associations
@@ -539,12 +539,17 @@ namespace Netsukuku.Identities
                         w0.peer_mac = _dup_data.peer_old_id_new_mac;
                         w0.peer_linklocal = _dup_data.peer_old_id_new_linklocal;
                         w1.peer_nodeid = _dup_data.peer_new_id;
-                        identity_arc_changed(arc, old_id, w0);
                     }
+                    // signal added arc
                     identity_arc_added(arc, new_identity.id, w1);
                     // Add direct route to gateway from the updated link-local of the old identity
                     //  to the link-local that is now set on the updated identity-arc.
                     netns_manager.add_gateway(ns_temp, devdata.old_id_new_linklocal, w0.peer_linklocal, devdata.old_id_new_dev);
+                    // signal changed arc
+                    if (dup_data != null && dup_data is DuplicationData)
+                    {
+                        identity_arc_changed(arc, old_id, w0);
+                    }
                 }
                 if (arc_is_broken)
                 {
@@ -607,7 +612,7 @@ namespace Netsukuku.Identities
         {
             bool is_main_identity_arc = main_id.id.equals(id);
             is_main_identity_arc = is_main_identity_arc && peer_linklocal == arc.get_peer_linklocal();
-            add_in_identity_arcs(id, arc, peer_nodeid, peer_mac, peer_linklocal);
+            IdentityArc new_identity_arc = add_in_identity_arcs(id, arc, peer_nodeid, peer_mac, peer_linklocal);
             // Do we need to add a gateway with netns-manager?
             if (! is_main_identity_arc)
             {
@@ -618,6 +623,8 @@ namespace Netsukuku.Identities
                 string linklocal = handled_nics[k].linklocal;
                 netns_manager.add_gateway(ns, linklocal, peer_linklocal, pseudodev);
             }
+            // signal added arc
+            identity_arc_added(arc, id, new_identity_arc);
         }
 
         public void remove_identity_arc(IIdmgmtArc arc, NodeID id, NodeID peer_nodeid, bool do_tell=true)
@@ -866,12 +873,13 @@ namespace Netsukuku.Identities
             IdentityArc? old_identity_arc = get_from_identity_arcs(my_id, arc, my_peer_old_id);
             if (old_identity_arc == null) return;
             // Add new identity-arc
-            add_in_identity_arcs(my_id, arc, my_peer_new_id,
+            IdentityArc new_identity_arc = add_in_identity_arcs(my_id, arc, my_peer_new_id,
                                  old_identity_arc.peer_mac, old_identity_arc.peer_linklocal);
+            // signal added ard
+            identity_arc_added(arc, my_id, new_identity_arc);
             // Modify old identity-arc
             old_identity_arc.peer_linklocal = my_peer_old_id_new_linklocal;
             old_identity_arc.peer_mac = my_peer_old_id_new_mac;
-            identity_arc_changed(arc, my_id, old_identity_arc, true);
             // Add direct route to gateway from the link-local of my identity for this arc
             //  to the updated peer-link-local of the old identity-arc.
             string ns = namespaces[@"$(my_id.id)"];
@@ -881,6 +889,8 @@ namespace Netsukuku.Identities
             string linklocal = handled_nics[k].linklocal;
             string peer_linklocal = old_identity_arc.peer_linklocal;
             netns_manager.add_gateway(ns, linklocal, peer_linklocal, pseudodev);
+            // signal changed arc
+            identity_arc_changed(arc, my_id, old_identity_arc, true);
         }
         private class NeighbourMigratedTasklet : Object, ITaskletSpawnable
         {
