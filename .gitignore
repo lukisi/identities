@@ -1,3 +1,4 @@
+*~
 identities.c
 identities.h
 identities.vapi
@@ -33,5 +34,6 @@ missing
 test-driver
 compile
 .valencia
+.buildconfig
 debug
 finalbuild
