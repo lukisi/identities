@@ -20,6 +20,11 @@ libidentities_la_SOURCES = \
 libidentities_la_VALAFLAGS = \
 	-H identities.h \
 	--library identities \
+	--vapidir $(GEE_PREFIX)/share/vala/vapi \
+	--vapidir $(JSON_PREFIX)/share/vala-0.32/vapi \
+	--vapidir $(TASKLETSYSTEM_VAPIDIR) \
+	--vapidir $(NTKDCOMMON_VAPIDIR) \
+	--vapidir $(NTKDRPC_VAPIDIR) \
 	--pkg gee-0.8 \
 	--pkg json-glib-1.0 \
 	--pkg tasklet-system \
@@ -52,6 +57,11 @@ test_identitymanager_1_SOURCES = \
 	$(NULL)
 
 test_identitymanager_1_VALAFLAGS = \
+	--vapidir $(GEE_PREFIX)/share/vala/vapi \
+	--vapidir $(TASKLETSYSTEM_VAPIDIR) \
+	--vapidir $(PTHTASKLET_VAPIDIR) \
+	--vapidir $(NTKDCOMMON_VAPIDIR) \
+	--vapidir $(NTKDRPC_VAPIDIR) \
 	--pkg glib-2.0 \
 	--pkg gee-0.8 \
 	--pkg tasklet-system \
