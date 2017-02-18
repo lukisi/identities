@@ -21,6 +21,8 @@ using TaskletSystem;
 
 namespace Netsukuku.Identities
 {
+    public delegate string NewLinklocalAddress();
+
     public interface IIdmgmtNetnsManager : Object
     {
         public abstract void create_namespace(string ns);
@@ -62,7 +64,8 @@ namespace Netsukuku.Identities
                                Gee.List<string> if_list_mac,
                                Gee.List<string> if_list_linklocal,
                                IIdmgmtNetnsManager netns_manager,
-                               IIdmgmtStubFactory stub_factory
+                               IIdmgmtStubFactory stub_factory,
+                               NewLinklocalAddress new_linklocal_address
                                )
         {
             // Register serializable types internal to the module.
@@ -84,6 +87,7 @@ namespace Netsukuku.Identities
             assert(if_list_dev.size == if_list_linklocal.size);
             this.netns_manager = netns_manager;
             this.stub_factory = stub_factory;
+            this.new_linklocal_address = new_linklocal_address;
             // create first identity in default namespace
             main_id = new Identity();
             id_list.add(main_id);
@@ -103,6 +107,7 @@ namespace Netsukuku.Identities
         private ArrayList<MigrationData> pending_migrations;
         private IIdmgmtNetnsManager netns_manager;
         private IIdmgmtStubFactory stub_factory;
+        private NewLinklocalAddress new_linklocal_address;
 
         /* Associations
          */
@@ -455,10 +460,8 @@ namespace Netsukuku.Identities
                 string pseudo_dev = @"$(ns_temp)_$(dev)";
                 string pseudo_mac;
                 netns_manager.create_pseudodev(dev, ns_temp, pseudo_dev, out pseudo_mac);
-                // generate a random IP for this pseudodev
-                int i2 = Random.int_range(0, 255);
-                int i3 = Random.int_range(0, 255);
-                string old_id_new_linklocal = @"169.254.$(i2).$(i3)";
+                // get a new linklocal IP for this pseudodev
+                string old_id_new_linklocal = new_linklocal_address();
                 netns_manager.add_address(ns_temp, pseudo_dev, old_id_new_linklocal);
                 // Store values
                 HandledNic old_id_new_hnic = new HandledNic();
