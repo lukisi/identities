@@ -32,7 +32,8 @@ void main()
             new ArrayList<string>.wrap({"82:77:05:80:02:65"}),
             new ArrayList<string>.wrap({"169.254.28.181"}),
             new FakeNetnsManager(),
-            new FakeStubFactory());
+            new FakeStubFactory(),
+            /*NewLinklocalAddress*/ () => @"169.254.$(Random.int_range(0, 255)).$(Random.int_range(0, 255))");
     // Get my first id.
     NodeID id0 = im0.get_main_id();
     print(@"id0 = $(id0.id).\n");
