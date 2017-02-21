@@ -32,12 +32,8 @@ void main()
             new ArrayList<string>.wrap({"82:77:05:80:02:65"}),
             new ArrayList<string>.wrap({"192.168.28.181"}),
             new FakeNetnsManager(),
-            new FakeStubFactory(), () => {
-                // generate a random IP for this pseudodev
-                int i2 = Random.int_range(0, 255);
-                int i3 = Random.int_range(0, 255);
-                return @"192.168.$(i2).$(i3)";
-            });
+            new FakeStubFactory(),
+            /*NewLinklocalAddress*/ () => @"192.168.$(Random.int_range(0, 255)).$(Random.int_range(0, 255))");
     // Get my first id.
     NodeID id0 = im0.get_main_id();
     print(@"id0 = $(id0.id).\n");

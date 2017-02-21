@@ -65,7 +65,7 @@ namespace Netsukuku.Identities
                                Gee.List<string> if_list_linklocal,
                                IIdmgmtNetnsManager netns_manager,
                                IIdmgmtStubFactory stub_factory,
-                               NewLinklocalAddress new_linklocal_address
+                               owned NewLinklocalAddress new_linklocal_address
                                )
         {
             // Register serializable types internal to the module.
@@ -87,7 +87,7 @@ namespace Netsukuku.Identities
             assert(if_list_dev.size == if_list_linklocal.size);
             this.netns_manager = netns_manager;
             this.stub_factory = stub_factory;
-            this.new_linklocal_address = new_linklocal_address;
+            this.new_linklocal_address = (owned)new_linklocal_address;
             // create first identity in default namespace
             main_id = new Identity();
             id_list.add(main_id);
