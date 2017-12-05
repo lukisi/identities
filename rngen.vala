@@ -24,7 +24,7 @@ namespace Netsukuku.Identities
     public interface IRandomNumberGenerator : Object
     {
         // Generate a random integer from begin (included) to end (excluded)
-        public abstract int32 random_int_range(int32 begin, int32 end);
+        public abstract int32 int_range(int32 begin, int32 end);
     }
 
     internal class PRNGen : Object
@@ -55,11 +55,11 @@ namespace Netsukuku.Identities
 
         private static IRandomNumberGenerator? _rng = null;
 
-        public static int32 random_int_range(int32 begin, int32 end)
+        public static int32 int_range(int32 begin, int32 end)
         {
             if (_rng == null) init_rngen();
             assert(_rng != null);
-            return _rng.random_int_range(begin, end);
+            return _rng.int_range(begin, end);
         }
     }
 
@@ -75,7 +75,7 @@ namespace Netsukuku.Identities
             _rand = new Rand.with_seed(seed);
         }
 
-        public int32 random_int_range(int32 begin, int32 end)
+        public int32 int_range(int32 begin, int32 end)
         {
             if (_rand == null) return Random.int_range(begin, end);
             else return _rand.int_range(begin, end);

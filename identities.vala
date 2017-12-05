@@ -930,7 +930,7 @@ namespace Netsukuku.Identities
         public NodeID id;
         public Identity()
         {
-            id = new NodeID(Random.int_range(1, int.MAX));
+            id = new NodeID(PRNGen.int_range(1, int.MAX));
             modules = new HashMap<string, Object>();
         }
 
