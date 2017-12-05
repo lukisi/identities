@@ -59,8 +59,21 @@ namespace Netsukuku.Identities
     internal ITasklet tasklet;
     public class IdentityManager : Object, IIdentityManagerSkeleton
     {
-        public IdentityManager(ITasklet _tasklet,
-                               Gee.List<string> if_list_dev,
+        public static void init(ITasklet _tasklet)
+        {
+            // Register serializable types internal to the module.
+            typeof(DuplicationData).class_peek();
+            typeof(NodeID).class_peek();
+            typeof(NodeIDAsIdentityID).class_peek();
+            tasklet = _tasklet;
+        }
+
+        public static void init_rngen(IRandomNumberGenerator? rngen=null, int? seed=null)
+        {
+            PRNGen.init_rngen(rngen, seed);
+        }
+
+        public IdentityManager(Gee.List<string> if_list_dev,
                                Gee.List<string> if_list_mac,
                                Gee.List<string> if_list_linklocal,
                                IIdmgmtNetnsManager netns_manager,
@@ -68,11 +81,6 @@ namespace Netsukuku.Identities
                                owned NewLinklocalAddress new_linklocal_address
                                )
         {
-            // Register serializable types internal to the module.
-            typeof(DuplicationData).class_peek();
-            typeof(NodeID).class_peek();
-            typeof(NodeIDAsIdentityID).class_peek();
-            tasklet = _tasklet;
             // init collections and stuff
             next_arc_id = 1;
             pending_migrations = new ArrayList<MigrationData>();

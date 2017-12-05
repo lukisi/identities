@@ -15,6 +15,7 @@ TESTS = \
 
 libidentities_la_SOURCES = \
 	identities.vala \
+	rngen.vala \
 	$(NULL)
 
 libidentities_la_VALAFLAGS = \
