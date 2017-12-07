@@ -275,10 +275,15 @@ namespace Netsukuku.Identities
         {
             assert(! arc_list.has_key(arc));
             add_arc_to_list(arc);
+            print(@"Identities: add_arc: The system now has arc $(arc_list[arc])...\n");
+            print(@"  ... The system has $(id_list.size) identities...\n");
             foreach (Identity id in id_list)
             {
                 string k = key_for_identity_arcs(id.id, arc);
                 identity_arcs[k] = new ArrayList<IdentityArc>();
+                print(@"  ... identity $(id),");
+                if (main_id == id) print(" main,");
+                print(@" which has got now a new list for id-arcs with key $(k);\n");
             }
             try {
                 IIdentityID _peer_id;
@@ -292,6 +297,9 @@ namespace Netsukuku.Identities
                 if (_peer_id is NodeIDAsIdentityID)
                 {
                     NodeID peer_id = ((NodeIDAsIdentityID)_peer_id).id;
+                    print(@"Identities: add_arc: calling add_identity_arc for main_id $(main_id) ...\n");
+                    print(@" ... on arc $(arc_list[arc]) with peer_main_id $(peer_id.id) ...\n");
+                    print(@" ... this won't add a 'ip route'.\n");
                     add_identity_arc(arc, main_id.id, peer_id, arc.get_peer_mac(), arc.get_peer_linklocal());
                 }
             } catch (ArcCommunicationError e) {
@@ -438,6 +446,7 @@ namespace Netsukuku.Identities
         private int next_namespace = 0;
         public NodeID add_identity(int migration_id, NodeID old_id)
         {
+            print("Identities: add_identity: begin\n");
             Identity old_identity = find_identity(old_id);
             MigrationData? migration_data = null;
             for (int i = 0; i < pending_migrations.size; i++)
@@ -452,6 +461,7 @@ namespace Netsukuku.Identities
             assert(migration_data != null);
             Identity new_identity = new Identity();
             id_list.add(new_identity);
+            print(@"Identities: add_identity: old = $(old_identity), new = $(new_identity), migration_id = $(migration_id).\n");
             migration_data.new_id = new_identity.id;
             // Choose a name for namespace.
             int this_namespace = next_namespace++;
@@ -493,6 +503,7 @@ namespace Netsukuku.Identities
             arc_list_keys_copy.add_all(arc_list.keys);
             foreach (IIdmgmtArc arc in arc_list_keys_copy)
             {
+                print(@"Identities: add_identity: arc $(arc_list[arc])\n");
                 bool arc_is_broken = false;
                 MigrationDeviceData devdata = migration_data.devices[arc.get_dev()];
                 string k_old = key_for_identity_arcs(old_identity.id, arc);
@@ -503,6 +514,8 @@ namespace Netsukuku.Identities
                 if (! identity_arcs.has_key(k_old)) continue;
                 foreach (IdentityArc w0 in identity_arcs[k_old])
                 {
+                    print(@"Identities: add_identity: id-arc w0 on $(k_old) with peer $(w0.peer_nodeid.id): ask peer IDuplicationData ...\n");
+                    print(@" ... on migration_id $(migration_id).\n");
                     IdentityArc w1 = w0.copy();
                     identity_arcs[k_new].add(w1);
                     IDuplicationData? dup_data = null;
@@ -551,13 +564,18 @@ namespace Netsukuku.Identities
                         w0.peer_linklocal = _dup_data.peer_old_id_new_linklocal;
                         w1.peer_nodeid = _dup_data.peer_new_id;
                     }
+                    print(@"Identities: add_identity: id-arc w0 on $(k_old) with peer $(w0.peer_nodeid.id) has been duplicated in\n");
+                    print(@" ... id-arc w1 on $(k_new) with peer $(w1.peer_nodeid.id). Signaling identity_arc_added.\n");
                     // signal added arc
                     identity_arc_added(arc, new_identity.id, w1);
                     // Add direct route to gateway from the updated link-local of the old identity
                     //  to the link-local that is now set on the updated identity-arc.
+                    print(@"Identities: add_identity: call netns_manager.add_gateway for id $(old_identity) in new namespace.\n");
                     netns_manager.add_gateway(ns_temp, devdata.old_id_new_linklocal, w0.peer_linklocal, devdata.old_id_new_dev);
                     if (dup_data != null && dup_data is DuplicationData)
                     {
+                        print(@"Identities: add_identity: id-arc w0 on $(k_old) with peer $(w0.peer_nodeid.id) has changed\n");
+                        print(@" ... peer_mac ($(w0.peer_mac)) and peer_linklocal ($(w0.peer_linklocal)). Signaling identity_arc_changed.\n");
                         // signal changed arc
                         identity_arc_changed(arc, old_id, w0);
                     }
@@ -632,6 +650,7 @@ namespace Netsukuku.Identities
                 string k = key_for_handled_nics(id, dev);
                 string pseudodev = handled_nics[k].dev;
                 string linklocal = handled_nics[k].linklocal;
+                print(@"Identities: add_identity_arc: call netns_manager.add_gateway.\n");
                 netns_manager.add_gateway(ns, linklocal, peer_linklocal, pseudodev);
             }
             // signal added arc
@@ -655,7 +674,9 @@ namespace Netsukuku.Identities
                 netns_manager.remove_gateway(ns, linklocal, to_remove.peer_linklocal, pseudodev);
             }
             string k = key_for_identity_arcs(id, arc);
+            print(@"Identities: remove_identity_arc: for k = $(k) before remove identity_arcs[k].size = $(identity_arcs[k].size).\n");
             identity_arcs[k].remove(to_remove);
+            print(@"Identities: remove_identity_arc: for k = $(k) after remove identity_arcs[k].size = $(identity_arcs[k].size).\n");
             if (do_tell)
             {
                 // notify_identity_arc_removed through this arc
@@ -826,6 +847,7 @@ namespace Netsukuku.Identities
         (int migration_id, IIdentityID peer_id, IIdentityID old_id, IIdentityID new_id,
          string old_id_new_mac, string old_id_new_linklocal, CallerInfo? caller = null)
         {
+            print(@"Identities: match_duplication: got a call for migration_id = $(migration_id) ...\n");
             if (caller == null) tasklet.exit_tasklet(null);
             IIdmgmtArc? arc = stub_factory.get_arc(caller);
             if (arc == null) tasklet.exit_tasklet(null);
@@ -833,6 +855,7 @@ namespace Netsukuku.Identities
             if (! (old_id is NodeIDAsIdentityID)) tasklet.exit_tasklet(null);
             if (! (new_id is NodeIDAsIdentityID)) tasklet.exit_tasklet(null);
             NodeID my_old_id = ((NodeIDAsIdentityID)peer_id).id;
+            print(@" ... to id $(my_old_id.id) ...\n");
             NodeID my_peer_old_id = ((NodeIDAsIdentityID)old_id).id;
             NodeID my_peer_new_id = ((NodeIDAsIdentityID)new_id).id;
             string my_peer_old_id_new_mac = old_id_new_mac;
@@ -849,7 +872,9 @@ namespace Netsukuku.Identities
             }
             if (migration_data != null)
             {
+                print(@" ... which participates to duplication ...\n");
                 while (! migration_data.ready) tasklet.ms_wait(50);
+                print(@" ... with new_id $(migration_data.new_id.id).\n");
                 string ir_dev = arc.get_dev();
                 DuplicationData ret = new DuplicationData();
                 ret.peer_new_id = migration_data.new_id;
@@ -859,6 +884,7 @@ namespace Netsukuku.Identities
             }
             else
             {
+                print(@" ... which does not participate to duplication.\n");
                 // immediately answer <null> and in a tasklet add the new identity-arc.
                 NeighbourMigratedTasklet ts = new NeighbourMigratedTasklet();
                 ts.mgr = this;
@@ -884,11 +910,18 @@ namespace Netsukuku.Identities
             IdentityArc? old_identity_arc = get_from_identity_arcs(my_id, arc, my_peer_old_id);
             if (old_identity_arc == null) return;
             // Add new identity-arc
+            print(@"Identities: neighbour_migrated: calling add_in_identity_arcs for id $(my_id.id) ...\n");
+            print(@" ... on arc $(arc_list[arc]) with peer_id $(my_peer_new_id.id) ...\n");
+            print(@" ... which takes away $(old_identity_arc.peer_linklocal) from peer_id $(my_peer_old_id.id).\n");
             IdentityArc new_identity_arc = add_in_identity_arcs(my_id, arc, my_peer_new_id,
                                  old_identity_arc.peer_mac, old_identity_arc.peer_linklocal);
             // signal added arc
+            print(@"Identities: neighbour_migrated: Signaling identity_arc_added.\n");
             identity_arc_added(arc, my_id, new_identity_arc);
             // Modify old identity-arc
+            print(@"Identities: neighbour_migrated: modifying id-arc for id $(my_id.id) ...\n");
+            print(@" ... on arc $(arc_list[arc]) with peer_id $(my_peer_old_id.id) ...\n");
+            print(@" ... which now has $(my_peer_old_id_new_linklocal).\n");
             old_identity_arc.peer_linklocal = my_peer_old_id_new_linklocal;
             old_identity_arc.peer_mac = my_peer_old_id_new_mac;
             // Add direct route to gateway from the link-local of my identity for this arc
@@ -899,8 +932,10 @@ namespace Netsukuku.Identities
             string pseudodev = handled_nics[k].dev;
             string linklocal = handled_nics[k].linklocal;
             string peer_linklocal = old_identity_arc.peer_linklocal;
+            print(@"Identities: neighbour_migrated: call netns_manager.add_gateway for id $(my_id.id) in its namespace.\n");
             netns_manager.add_gateway(ns, linklocal, peer_linklocal, pseudodev);
             // signal changed arc
+            print(@"Identities: neighbour_migrated: Signaling identity_arc_changed.\n");
             identity_arc_changed(arc, my_id, old_identity_arc, true);
         }
         private class NeighbourMigratedTasklet : Object, ITaskletSpawnable
