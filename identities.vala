@@ -556,9 +556,9 @@ namespace Netsukuku.Identities
                     // Add direct route to gateway from the updated link-local of the old identity
                     //  to the link-local that is now set on the updated identity-arc.
                     netns_manager.add_gateway(ns_temp, devdata.old_id_new_linklocal, w0.peer_linklocal, devdata.old_id_new_dev);
-                    // signal changed arc
                     if (dup_data != null && dup_data is DuplicationData)
                     {
+                        // signal changed arc
                         identity_arc_changed(arc, old_id, w0);
                     }
                 }
@@ -886,7 +886,7 @@ namespace Netsukuku.Identities
             // Add new identity-arc
             IdentityArc new_identity_arc = add_in_identity_arcs(my_id, arc, my_peer_new_id,
                                  old_identity_arc.peer_mac, old_identity_arc.peer_linklocal);
-            // signal added ard
+            // signal added arc
             identity_arc_added(arc, my_id, new_identity_arc);
             // Modify old identity-arc
             old_identity_arc.peer_linklocal = my_peer_old_id_new_linklocal;
