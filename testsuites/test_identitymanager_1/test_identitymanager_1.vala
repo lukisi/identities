@@ -26,8 +26,10 @@ void main()
 {
     PthTaskletImplementer.init();
     testsuite_tasklet = PthTaskletImplementer.get_tasklet_system();
+    IdentityManager.init(tasklet);
+    IdentityManager.init_rngen(null, 0);
     // Create the manager for this node. This creates first id.
-    IdentityManager im0 = new IdentityManager(testsuite_tasklet,
+    IdentityManager im0 = new IdentityManager(
             new ArrayList<string>.wrap({"eth0"}),
             new ArrayList<string>.wrap({"82:77:05:80:02:65"}),
             new ArrayList<string>.wrap({"169.254.28.181"}),

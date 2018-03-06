@@ -55,6 +55,7 @@ libidentities_la_LIBADD = \
 test_identitymanager_1_SOURCES = \
 	testsuites/test_identitymanager_1/test_identitymanager_1.vala \
 	testsuites/test_identitymanager_1/identities.vala \
+	testsuites/test_identitymanager_1/rngen.vala \
 	$(NULL)
 
 test_identitymanager_1_VALAFLAGS = \
