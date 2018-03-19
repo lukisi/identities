@@ -552,7 +552,7 @@ namespace Netsukuku.Identities
                         w1.peer_nodeid = _dup_data.peer_new_id;
                     }
                     // signal added arc
-                    identity_arc_added(arc, new_identity.id, w1);
+                    identity_arc_added(arc, new_identity.id, w1, w0);
                     // Add direct route to gateway from the updated link-local of the old identity
                     //  to the link-local that is now set on the updated identity-arc.
                     netns_manager.add_gateway(ns_temp, devdata.old_id_new_linklocal, w0.peer_linklocal, devdata.old_id_new_dev);
@@ -766,7 +766,7 @@ namespace Netsukuku.Identities
         /* Signals
          */
 
-        public signal void identity_arc_added(IIdmgmtArc arc, NodeID id, IIdmgmtIdentityArc id_arc);
+        public signal void identity_arc_added(IIdmgmtArc arc, NodeID id, IIdmgmtIdentityArc id_arc, IIdmgmtIdentityArc? prev_id_arc=null);
         public signal void identity_arc_changed(IIdmgmtArc arc, NodeID id, IIdmgmtIdentityArc id_arc, bool only_neighbour_migrated=false);
         public signal void identity_arc_removing(IIdmgmtArc arc, NodeID id, NodeID peer_nodeid);
         public signal void identity_arc_removed(IIdmgmtArc arc, NodeID id, NodeID peer_nodeid);
