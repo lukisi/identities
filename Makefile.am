@@ -22,7 +22,7 @@ libidentities_la_VALAFLAGS = \
 	-H identities.h \
 	--library identities \
 	--vapidir $(GEE_PREFIX)/share/vala/vapi \
-	--vapidir $(JSON_PREFIX)/share/vala-0.32/vapi \
+	--vapidir $(JSON_PREFIX)/share/vala-0.36/vapi \
 	--vapidir $(TASKLETSYSTEM_VAPIDIR) \
 	--vapidir $(NTKDCOMMON_VAPIDIR) \
 	--vapidir $(NTKDRPC_VAPIDIR) \
