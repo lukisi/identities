@@ -14,7 +14,7 @@ namespace SystemPeer
         }
 
         private NodeSkeleton node_skeleton;
-        public NeighborhoodNodeID whole_node_id {
+        public int /*NeighborhoodNodeID*/ whole_node_id {
             get {
                 return node_skeleton.id;
             }
@@ -42,21 +42,6 @@ namespace SystemPeer
             handles_by_listen_pathname.unset(listen_pathname);
         }
 
-        public void start_datagram_system_listen(string listen_pathname, string send_pathname, ISrcNic src_nic)
-        {
-            IErrorHandler datagram_system_err = new ServerErrorHandler(@"for datagram_system_listen $(listen_pathname) $(send_pathname) TODO SrcNic.tostring()");
-            if (handles_by_listen_pathname == null) handles_by_listen_pathname = new HashMap<string,IListenerHandle>();
-            handles_by_listen_pathname[listen_pathname] = datagram_system_listen(dlg, datagram_system_err, listen_pathname, send_pathname, src_nic);
-        }
-        public void stop_datagram_system_listen(string listen_pathname)
-        {
-            assert(handles_by_listen_pathname != null);
-            assert(handles_by_listen_pathname.has_key(listen_pathname));
-            IListenerHandle lh = handles_by_listen_pathname[listen_pathname];
-            lh.kill();
-            handles_by_listen_pathname.unset(listen_pathname);
-        }
-
         [NoReturn]
         private void abort_tasklet(string msg_warning)
         {
@@ -75,37 +60,6 @@ namespace SystemPeer
             NeighborhoodNodeID my_id = _unicast_id.neighbour_id;
             if (! my_id.equals(node_skeleton.id)) abort_tasklet(@"caller_info.unicast_id is not me.");
             return node_skeleton;
-        }
-
-        private Gee.List<IAddressManagerSkeleton> get_dispatcher_set(DatagramCallerInfo caller_info)
-        {
-            if (! (caller_info.source_id is WholeNodeSourceID)) abort_tasklet(@"Bad caller_info.source_id");
-            if (! (caller_info.broadcast_id is EveryWholeNodeBroadcastID)) abort_tasklet(@"Bad caller_info.broadcast_id");
-            Gee.List<IAddressManagerSkeleton> ret = new ArrayList<IAddressManagerSkeleton>();
-            ret.add(node_skeleton);
-            return ret;
-        }
-
-        public string?
-        from_caller_get_mydev(CallerInfo _rpc_caller)
-        {
-            if (_rpc_caller is StreamCallerInfo)
-            {error("not implemented yet");}
-            else if (_rpc_caller is DatagramCallerInfo)
-            {
-                DatagramCallerInfo rpc_caller = (DatagramCallerInfo)_rpc_caller;
-                assert(rpc_caller.listener is DatagramSystemListener);
-                DatagramSystemListener _listener = (DatagramSystemListener)rpc_caller.listener;
-                foreach (string dev in pseudonic_map.keys)
-                {
-                    PseudoNetworkInterface pseudonic = pseudonic_map[dev];
-                    if (pseudonic.listen_pathname != _listener.listen_pathname) continue;
-                    if (pseudonic.send_pathname != _listener.send_pathname) continue;
-                    return dev;
-                }
-                assert_not_reached();
-            }
-            else abort_tasklet(@"Unknown caller_info: $(_rpc_caller.get_type().name())");
         }
 
         public INeighborhoodArc?
@@ -150,8 +104,7 @@ namespace SystemPeer
                 }
                 else if (caller_info is DatagramCallerInfo)
                 {
-                    DatagramCallerInfo c = (DatagramCallerInfo)caller_info;
-                    return skeleton_factory.get_dispatcher_set(c);
+                    error("not in this test");
                 }
                 else
                 {
@@ -164,19 +117,19 @@ namespace SystemPeer
          */
         private class NodeSkeleton : Object, IAddressManagerSkeleton
         {
-            public NeighborhoodNodeID id;
+            public int /*NeighborhoodNodeID*/ id;
 
             public unowned INeighborhoodManagerSkeleton
             neighborhood_manager_getter()
             {
-                // global var neighborhood_mgr is NeighborhoodManager, which is a INeighborhoodManagerSkeleton
-                return neighborhood_mgr;
+                error("not in this test");
             }
 
             protected unowned IIdentityManagerSkeleton
             identity_manager_getter()
             {
-                error("not in this test");
+                // global var identity_mgr is IdentityManager, which is a IIdentityManagerSkeleton
+                return identity_mgr;
             }
 
             public unowned IQspnManagerSkeleton
