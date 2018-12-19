@@ -1,6 +1,6 @@
 using Gee;
 using Netsukuku;
-using Netsukuku.Neighborhood;
+using Netsukuku.Identities;
 using TaskletSystem;
 
 namespace SystemPeer
@@ -54,18 +54,41 @@ namespace SystemPeer
             // in this test we have only WholeNodeUnicastID
             if (! (caller_info.source_id is WholeNodeSourceID)) abort_tasklet(@"Bad caller_info.source_id");
             WholeNodeSourceID _source_id = (WholeNodeSourceID)caller_info.source_id;
-            NeighborhoodNodeID neighbour_id = _source_id.id;
+            int /*NeighborhoodNodeID*/ neighbour_id = _source_id.id;
             if (! (caller_info.unicast_id is WholeNodeUnicastID)) abort_tasklet(@"Bad caller_info.unicast_id");
             WholeNodeUnicastID _unicast_id = (WholeNodeUnicastID)caller_info.unicast_id;
-            NeighborhoodNodeID my_id = _unicast_id.neighbour_id;
-            if (! my_id.equals(node_skeleton.id)) abort_tasklet(@"caller_info.unicast_id is not me.");
+            int /*NeighborhoodNodeID*/ my_id = _unicast_id.neighbour_id;
+            if (my_id != node_skeleton.id) abort_tasklet(@"caller_info.unicast_id is not me.");
             return node_skeleton;
         }
 
-        public INeighborhoodArc?
+        public IdmgmtArc?
         from_caller_get_nodearc(CallerInfo rpc_caller)
         {
-            error("not implemented yet");
+            // in this test we have only WholeNodeSourceID
+            StreamCallerInfo caller_info = (StreamCallerInfo)rpc_caller;
+            if (! (caller_info.source_id is WholeNodeSourceID)) abort_tasklet(@"Bad caller_info.source_id");
+            WholeNodeSourceID _source_id = (WholeNodeSourceID)caller_info.source_id;
+            int /*NeighborhoodNodeID*/ neighbour_id = _source_id.id;
+            Listener listener = caller_info.listener;
+            assert(listener is StreamSystemListener);
+            string listen_pathname = ((StreamSystemListener)listener).listen_pathname;
+            assert(caller_info.src_nic is NeighbourSrcNic);
+            NeighbourSrcNic src_nic = (NeighbourSrcNic)caller_info.src_nic;
+            string neighbour_mac = src_nic.mac;
+            foreach (IdmgmtArc arc in arcs)
+                if (arc.peer_id == neighbour_id)
+                if (arc.peer_mac == neighbour_mac)
+                // TODO if arc.my_dev == listen_pathname
+                    return arc;
+            return null;
+/*
+   x     public string my_dev;
+        public string my_mac;
+   x     public int ==NeighborhoodNodeID== peer_id;
+   x     public string peer_mac;
+        public string peer_linklocal;
+*/
         }
 
         // from_caller_get_identityarc not in this test

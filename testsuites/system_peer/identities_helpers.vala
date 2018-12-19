@@ -35,7 +35,7 @@ namespace SystemPeer
             }
             cm.single_command(new ArrayList<string>.wrap({
                 @"ip", @"link", @"set", @"dev", @"$(pseudo_dev)", @"address", @"$(newmac)"}));
-            pseudo_mac = macgetter.get_mac(pseudo_dev).up();
+            pseudo_mac = newmac.up(); // it was: pseudo_mac = macgetter.get_mac(pseudo_dev).up();
             cm.single_command(new ArrayList<string>.wrap({
                 @"ip", @"link", @"set", @"dev", @"$(pseudo_dev)", @"netns", @"$(ns)"}));
             // disable rp_filter
@@ -111,9 +111,7 @@ namespace SystemPeer
     {
         public IIdmgmtArc? get_arc(CallerInfo rpc_caller)
         {
-            NodeArc? node_arc = skeleton_factory.from_caller_get_nodearc(rpc_caller);
-            if (node_arc != null) return node_arc.i_arc;
-            return null;
+            return skeleton_factory.from_caller_get_nodearc(rpc_caller);
         }
 
         public IIdentityManagerStub get_stub(IIdmgmtArc arc)

@@ -7,108 +7,22 @@ namespace SystemPeer
 {
     void identities_identity_arc_added(IIdmgmtArc arc, NodeID id, IIdmgmtIdentityArc id_arc, IIdmgmtIdentityArc? prev_id_arc)
     {
-        // Retrieve my identity.
-        IdentityData identity_data = find_or_create_local_identity(id);
-        // Create IdentityArc.
-        IdentityArc ia = new IdentityArc(identity_data, arc, id_arc);
-        // Add to the list.
-        identity_data.identity_arcs.add(ia);
-
-        print(@"identities_identity_arc_added: my id $(identity_data.nodeid.id) connected to");
-        print(@" id $(ia.id_arc.get_peer_nodeid().id) on arc $(((IdmgmtArc)arc).id).\n");
-        print(@" peer_linklocal = $(ia.peer_linklocal).\n");
-
-        // If needed, pass it to the Hooking module.
-        if (prev_id_arc == null)
-        {
-            print(@" Passing it to the module Hooking.\n");
-            while (identity_data.hook_mgr == null) tasklet.ms_wait(10);
-            ia.hooking_arc = new HookingIdentityArc(ia);
-            identity_data.hook_mgr.add_arc(ia.hooking_arc);
-        }
-
-        // If we know the previous id-arc, copy the network_id
-        if (prev_id_arc != null)
-        {
-            // Retrieve previous IdentityArc.
-            IdentityArc prev_ia = find_identity_arc(prev_id_arc);
-            ia.network_id = prev_ia.network_id;
-        }
+        warning("unused signal identities_identity_arc_added");
     }
 
     void identities_identity_arc_changed(IIdmgmtArc arc, NodeID id, IIdmgmtIdentityArc id_arc, bool only_neighbour_migrated)
     {
-        // Retrieve my identity.
-        IdentityData identity_data = find_or_create_local_identity(id);
-        // Retrieve IdentityArc.
-        IdentityArc ia = find_identity_arc(id_arc);
-
-        // Modify properties.
-        ia.prev_peer_mac = ia.peer_mac;
-        ia.prev_peer_linklocal = ia.peer_linklocal;
-        ia.peer_mac = ia.id_arc.get_peer_mac();
-        ia.peer_linklocal = ia.id_arc.get_peer_linklocal();
-
-        // TODO If a Qspn arc exists for it, change routes in kernel tables.
-
-        print(@"identities_identity_arc_changed: my id $(identity_data.nodeid.id) connected to");
-        print(@" id $(ia.id_arc.get_peer_nodeid().id) on arc $(((IdmgmtArc)arc).id).\n");
-        if (only_neighbour_migrated) print(@" only_neighbour_migrated.\n");
-        print(@" prev_peer_linklocal = $(ia.prev_peer_linklocal).");
-        print(@" peer_linklocal = $(ia.peer_linklocal).\n");
-
-        // This signal might happen when the module Identities of this system is doing `add_identity` on
-        //  this very identity (identity_data).
-        //  In this case the program does some further operations on its own (see EnterNetwork.enter or Migrate.migrate).
-        //  But this might also happen when only our neighbour is doing `add_identity`.
-        if (only_neighbour_migrated)
-        {
-            // TODO In this case we must do some work if we have a qspn_arc on this identity_arc.
-
-            // After that, we need no more to keep old values.
-            ia.prev_peer_mac = null;
-            ia.prev_peer_linklocal = null;
-        }
+        warning("unused signal identities_identity_arc_changed");
     }
 
     void identities_identity_arc_removing(IIdmgmtArc arc, NodeID id, NodeID peer_nodeid)
     {
-        // Retrieve my identity.
-        IdentityData identity_data = find_or_create_local_identity(id);
-        // Retrieve IdentityArc.
-        IdentityArc ia = find_identity_arc_by_peer_nodeid(identity_data, arc, peer_nodeid);
-
-        print(@"identities_identity_arc_removing: my id $(identity_data.nodeid.id) connected to");
-        print(@" id $(ia.id_arc.get_peer_nodeid().id) on arc $(((IdmgmtArc)arc).id).\n");
-        print(@" peer_linklocal = $(ia.peer_linklocal).\n");
-
-        if (ia.qspn_arc != null)
-        {
-            // Remove Qspn arc.
-            QspnManager qspn_mgr = (QspnManager)identity_mgr.get_identity_module(id, "qspn");
-            qspn_mgr.arc_remove(ia.qspn_arc);
-        }
+        warning("unused signal identities_identity_arc_removing");
     }
 
     void identities_identity_arc_removed(IIdmgmtArc arc, NodeID id, NodeID peer_nodeid)
     {
-        // Retrieve my identity.
-        IdentityData identity_data = find_or_create_local_identity(id);
-        // Retrieve IdentityArc.
-        IdentityArc ia = find_identity_arc_by_peer_nodeid(identity_data, arc, peer_nodeid);
-
-        print(@"identities_identity_arc_removed: my id $(identity_data.nodeid.id) connected to");
-        print(@" id $(ia.id_arc.get_peer_nodeid().id) on arc $(((IdmgmtArc)arc).id).\n");
-        print(@" peer_linklocal = $(ia.peer_linklocal).\n");
-
-        if (ia.qspn_arc != null)
-        {
-            ia.qspn_arc = null;
-            // Remove from the list.
-            identity_data.identity_arcs.remove(ia);
-            // Then remove kernel tables.
-            IpCommands.removed_arc(identity_data, ia.peer_mac);
-        }
+        warning("unused signal identities_identity_arc_removed");
     }
 
     void identities_arc_removed(IIdmgmtArc arc)

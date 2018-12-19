@@ -14,6 +14,8 @@ namespace SystemPeer
     SkeletonFactory skeleton_factory;
     StubFactory stub_factory;
 
+    ArrayList<IdmgmtArc> arcs;
+
     int main(string[] _args)
     {
         pid = 0; // default
@@ -45,12 +47,8 @@ namespace SystemPeer
         //typeof(MainIdentitySourceID).class_peek();
 
         // Initialize pseudo-random number generators.
-        uint32 seed_prn = 0;
-        if (devs.size > 0)
-        {
-            string _seed = @"$(pid)";
-            seed_prn = (uint32)_seed.hash();
-        }
+        string _seed = @"$(pid)";
+        uint32 seed_prn = (uint32)_seed.hash();
         PRNGen.init_rngen(null, seed_prn);
         IdentityManager.init_rngen(null, seed_prn);
 

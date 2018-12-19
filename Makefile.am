@@ -101,6 +101,8 @@ system_peer_SOURCES =  \
 	testsuites/system_peer/rpc/stub_factory.vala \
 	testsuites/system_peer/rpc/module_stubs.vala \
 	testsuites/system_peer/fake_command_dispatcher.vala \
+	testsuites/system_peer/identities_helpers.vala \
+	testsuites/system_peer/identities_signals.vala \
 	identities.vapi \
 	$(NULL)
 
