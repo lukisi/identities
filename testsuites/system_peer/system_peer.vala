@@ -61,8 +61,9 @@ namespace SystemPeer
 
         // Initialize modules that have remotable methods (serializable classes need to be registered).
         IdentityManager.init(tasklet);
-        //typeof(MainIdentitySourceID).class_peek();
-        // TODO
+        typeof(WholeNodeSourceID).class_peek();
+        typeof(WholeNodeUnicastID).class_peek();
+        typeof(NeighbourSrcNic).class_peek();
 
         // Initialize pseudo-random number generators.
         string _seed = @"$(pid)";
@@ -109,6 +110,7 @@ namespace SystemPeer
 
         my_system_id = fake_random_neighborhoodnodeid(pid);
         print(@"INFO: neighborhoodnodeid for $(pid) is $(my_system_id).\n");
+        skeleton_factory.whole_node_id = my_system_id;
 
         // Init module Identities
         identity_mgr = new IdentityManager(

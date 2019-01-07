@@ -1,1 +1,26 @@
 #!/bin/bash
+
+./system_peer -i eth0 -i eth1 -p 1 -t addarc,2,eth0,2,eth0 > test_script1_pid1_out.txt 2>&1 &
+PEER_1_PID=$!
+sleep 1
+./system_peer -i eth0 -i eth1 -p 2 -t addarc,1,eth0,1,eth0 > test_script1_pid2_out.txt 2>&1 &
+PEER_2_PID=$!
+sleep 0.3
+
+sleep 3
+
+# interrupt peer
+kill $PEER_1_PID
+# wait for peer and note down its retval
+wait $PEER_1_PID
+PEER_1_RET=$?
+
+# interrupt peer
+kill $PEER_2_PID
+# wait for peer and note down its retval
+wait $PEER_2_PID
+PEER_2_RET=$?
+
+# check testers retval
+test $PEER_1_RET -eq 0 || exit 1
+test $PEER_2_RET -eq 0 || exit 2
