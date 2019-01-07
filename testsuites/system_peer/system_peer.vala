@@ -8,6 +8,8 @@ namespace SystemPeer
 {
     [CCode (array_length = false, array_null_terminated = true)]
     string[] interfaces;
+    [CCode (array_length = false, array_null_terminated = true)]
+    string[] _tasks;
     int pid;
 
     ITasklet tasklet;
@@ -16,6 +18,7 @@ namespace SystemPeer
     SkeletonFactory skeleton_factory;
     StubFactory stub_factory;
     HashMap<string,PseudoNetworkInterface> pseudonic_map;
+    int /*NeighborhoodNodeID*/ my_system_id;
 
     ArrayList<IdmgmtArc> arcs;
 
@@ -23,10 +26,11 @@ namespace SystemPeer
     {
         pid = 0; // default
         OptionContext oc = new OptionContext("<options>");
-        OptionEntry[] entries = new OptionEntry[3];
+        OptionEntry[] entries = new OptionEntry[4];
         int index = 0;
         entries[index++] = {"pid", 'p', 0, OptionArg.INT, ref pid, "Fake PID (e.g. -p 1234).", null};
         entries[index++] = {"interfaces", 'i', 0, OptionArg.STRING_ARRAY, ref interfaces, "Interface (e.g. -i eth1). You can use it multiple times.", null};
+        entries[index++] = {"tasks", 't', 0, OptionArg.STRING_ARRAY, ref _tasks, "Tasks (e.g. -t addarc,2,eth0,5,eth1 means: after 2 secs add an arc from my nic eth0 to the nic eth1 of pid5). You can use it multiple times.", null};
         entries[index++] = { null };
         oc.add_main_entries(entries, null);
         try {
@@ -43,6 +47,9 @@ namespace SystemPeer
         // Names of the network interfaces to do RPC (to begin with).
         devs = new ArrayList<string>();
         foreach (string dev in interfaces) devs.add(dev);
+
+        ArrayList<string> tasks = new ArrayList<string>();
+        foreach (string task in _tasks) tasks.add(task);
 
         if (pid == 0) error("Bad usage");
         if (devs.is_empty) error("Bad usage");
@@ -79,21 +86,29 @@ namespace SystemPeer
             assert(!(dev in pseudonic_map.keys));
             string listen_pathname = @"recv_$(pid)_$(dev)";
             string send_pathname = @"send_$(pid)_$(dev)";
-            string mac = @"fe:aa:aa:$(PRNGen.int_range(10, 99)):$(PRNGen.int_range(10, 99)):$(PRNGen.int_range(10, 99))";
+            string mac = fake_random_mac(pid, dev);
+            // @"fe:aa:aa:$(PRNGen.int_range(10, 99)):$(PRNGen.int_range(10, 99)):$(PRNGen.int_range(10, 99))";
+            print(@"INFO: mac for $(pid),$(dev) is $(mac).\n");
             PseudoNetworkInterface pseudonic = new PseudoNetworkInterface(dev, listen_pathname, send_pathname, mac);
             pseudonic_map[dev] = pseudonic;
 
             // Start listen stream on linklocal
-            string linklocal = @"169.254.$(PRNGen.int_range(0, 255)).$(PRNGen.int_range(0, 255))";
+            string linklocal = fake_random_linklocal(mac);
+            // @"169.254.$(PRNGen.int_range(0, 255)).$(PRNGen.int_range(0, 255))";
+            print(@"INFO: linklocal for $(mac) is $(linklocal).\n");
             pseudonic.linklocal = linklocal;
             pseudonic.st_listen_pathname = @"conn_$(linklocal)";
             skeleton_factory.start_stream_system_listen(pseudonic.st_listen_pathname);
+            tasklet.ms_wait(1);
             print(@"started stream_system_listen $(pseudonic.st_listen_pathname).\n");
 
             if_list_dev.add(dev);
             if_list_mac.add(mac);
             if_list_linklocal.add(linklocal);
         }
+
+        my_system_id = fake_random_neighborhoodnodeid(pid);
+        print(@"INFO: neighborhoodnodeid for $(pid) is $(my_system_id).\n");
 
         // Init module Identities
         identity_mgr = new IdentityManager(
@@ -107,6 +122,13 @@ namespace SystemPeer
         identity_mgr.identity_arc_removing.connect(identities_identity_arc_removing);
         identity_mgr.identity_arc_removed.connect(identities_identity_arc_removed);
         identity_mgr.arc_removed.connect(identities_arc_removed);
+
+        foreach (string task in tasks)
+        {
+            if (schedule_task_addarc(task)) {}
+            // else if...
+            else error(@"unknown task $(task)");
+        }
 
         // TODO
 
@@ -166,5 +188,28 @@ namespace SystemPeer
         public string dev {get; private set;}
         public string linklocal {get; set;}
         public string st_listen_pathname {get; set;}
+    }
+
+    string fake_random_mac(int pid, string dev)
+    {
+        string _seed = @"$(pid)_$(dev)";
+        uint32 seed_prn = (uint32)_seed.hash();
+        Rand _rand = new Rand.with_seed(seed_prn);
+        return @"fe:aa:aa:$(_rand.int_range(10, 99)):$(_rand.int_range(10, 99)):$(_rand.int_range(10, 99))";
+    }
+
+    string fake_random_linklocal(string mac)
+    {
+        uint32 seed_prn = (uint32)mac.hash();
+        Rand _rand = new Rand.with_seed(seed_prn);
+        return @"169.254.$(_rand.int_range(0, 255)).$(_rand.int_range(0, 255))";
+    }
+
+    int /*NeighborhoodNodeID*/ fake_random_neighborhoodnodeid(int pid)
+    {
+        string _seed = @"$(pid)";
+        uint32 seed_prn = (uint32)_seed.hash();
+        Rand _rand = new Rand.with_seed(seed_prn);
+        return (int)(_rand.int_range(1, 99999));
     }
 }

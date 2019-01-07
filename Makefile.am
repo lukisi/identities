@@ -103,6 +103,7 @@ system_peer_SOURCES =  \
 	testsuites/system_peer/fake_command_dispatcher.vala \
 	testsuites/system_peer/identities_helpers.vala \
 	testsuites/system_peer/identities_signals.vala \
+	testsuites/system_peer/task_addarc.vala \
 	identities.vapi \
 	$(NULL)
 
