@@ -20,7 +20,6 @@ namespace SystemPeer
     HashMap<string,PseudoNetworkInterface> pseudonic_map;
     int /*NeighborhoodNodeID*/ my_system_id;
     ArrayList<NodeID> my_nodeid_list;
-
     ArrayList<IdmgmtArc> arcs;
 
     int main(string[] _args)
@@ -113,13 +112,15 @@ namespace SystemPeer
         print(@"INFO: neighborhoodnodeid for $(pid) is $(my_system_id).\n");
         skeleton_factory.whole_node_id = my_system_id;
 
+        arcs = new ArrayList<IdmgmtArc>();
+        my_nodeid_list = new ArrayList<NodeID>();
+
         // Init module Identities
         identity_mgr = new IdentityManager(
             if_list_dev, if_list_mac, if_list_linklocal,
             new IdmgmtNetnsManager(),
             new IdmgmtStubFactory(),
             () => @"169.254.$(PRNGen.int_range(0, 255)).$(PRNGen.int_range(0, 255))");
-        my_nodeid_list = new ArrayList<NodeID>();
         my_nodeid_list.add(identity_mgr.get_main_id());
         // connect signals
         identity_mgr.identity_arc_added.connect(identities_identity_arc_added);

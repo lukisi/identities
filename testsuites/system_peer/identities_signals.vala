@@ -29,5 +29,6 @@ namespace SystemPeer
     {
         // The module Identities has removed an arc. The user (ntkd) should actually remove the arc (from Neighborhood).
         print(@"Signal identities_arc_removed: dev $(arc.get_dev()) peer_mac $(arc.get_peer_mac()) peer_linklocal $(arc.get_peer_linklocal())\n");
+        arcs.remove((IdmgmtArc)arc);
     }
 }

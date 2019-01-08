@@ -77,18 +77,14 @@ namespace SystemPeer
             NeighbourSrcNic src_nic = (NeighbourSrcNic)caller_info.src_nic;
             string neighbour_mac = src_nic.mac;
             foreach (IdmgmtArc arc in arcs)
+            {
+                PseudoNetworkInterface arc_my_pseudonic = pseudonic_map[arc.my_dev];
                 if (arc.peer_id == neighbour_id)
                 if (arc.peer_mac == neighbour_mac)
-                // TODO if arc.my_dev == listen_pathname
+                if (arc_my_pseudonic.st_listen_pathname == listen_pathname)
                     return arc;
+            }
             return null;
-/*
-   x     public string my_dev;
-        public string my_mac;
-   x     public int ==NeighborhoodNodeID== peer_id;
-   x     public string peer_mac;
-        public string peer_linklocal;
-*/
         }
 
         // from_caller_get_identityarc not in this test

@@ -63,7 +63,7 @@ namespace SystemPeer
             if (! int64.try_parse(args[1], out migration_id)) error("bad args migration_id in task 'add_identity'");
             int64 nodeid_index;
             if (! int64.try_parse(args[2], out nodeid_index)) error("bad args nodeid_index in task 'add_identity'");
-            print(@"INFO: in $(s_wait) seconds will prepare to add identity from old_id #$(nodeid_index) with migration_id $(migration_id).\n");
+            print(@"INFO: in $(s_wait) seconds will add identity from old_id #$(nodeid_index) with migration_id $(migration_id).\n");
             AddIdentityTasklet s = new AddIdentityTasklet((int)(s_wait*1000), (int)migration_id, (int)nodeid_index);
             tasklet.spawn(s);
             return true;
