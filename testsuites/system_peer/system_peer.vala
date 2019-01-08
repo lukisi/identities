@@ -19,6 +19,7 @@ namespace SystemPeer
     StubFactory stub_factory;
     HashMap<string,PseudoNetworkInterface> pseudonic_map;
     int /*NeighborhoodNodeID*/ my_system_id;
+    ArrayList<NodeID> my_nodeid_list;
 
     ArrayList<IdmgmtArc> arcs;
 
@@ -118,6 +119,8 @@ namespace SystemPeer
             new IdmgmtNetnsManager(),
             new IdmgmtStubFactory(),
             () => @"169.254.$(PRNGen.int_range(0, 255)).$(PRNGen.int_range(0, 255))");
+        my_nodeid_list = new ArrayList<NodeID>();
+        my_nodeid_list.add(identity_mgr.get_main_id());
         // connect signals
         identity_mgr.identity_arc_added.connect(identities_identity_arc_added);
         identity_mgr.identity_arc_changed.connect(identities_identity_arc_changed);
@@ -127,8 +130,9 @@ namespace SystemPeer
 
         foreach (string task in tasks)
         {
-            if (schedule_task_addarc(task)) {}
-            // else if...
+            if      (schedule_task_addarc(task)) {}
+            else if (schedule_task_prepare_add_identity(task)) {}
+            else if (schedule_task_add_identity(task)) {}
             else error(@"unknown task $(task)");
         }
 

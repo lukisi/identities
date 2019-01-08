@@ -104,6 +104,7 @@ system_peer_SOURCES =  \
 	testsuites/system_peer/identities_helpers.vala \
 	testsuites/system_peer/identities_signals.vala \
 	testsuites/system_peer/task_addarc.vala \
+	testsuites/system_peer/task_addidentity.vala \
 	identities.vapi \
 	$(NULL)
 
