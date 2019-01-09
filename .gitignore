@@ -14,6 +14,9 @@ testsuites/system_peer/serializables.c
 testsuites/system_peer/system_peer.c
 testsuites/system_peer/task_addarc.c
 testsuites/system_peer/task_addidentity.c
+testsuites/system_peer/fake_neighborhood_signals.c
+testsuites/system_peer/task_addtag.c
+testsuites/system_peer/task_removearc.c
 Makefile.in
 Makefile
 ./test_identitymanager_1

@@ -51,9 +51,7 @@ namespace SystemPeer
             int /*NeighborhoodNodeID*/ peer_id = fake_random_neighborhoodnodeid(peer_pid);
             string peer_mac = fake_random_mac(peer_pid, peer_dev);
             string peer_linklocal = fake_random_linklocal(peer_mac);
-            IdmgmtArc arc = new IdmgmtArc(my_dev, my_mac, peer_id, peer_mac, peer_linklocal);
-            arcs.add(arc);
-            identity_mgr.add_arc(arc);
+            fake_neighborhood_arc_added(my_dev, my_mac, peer_id, peer_mac, peer_linklocal);
 
             return null;
         }

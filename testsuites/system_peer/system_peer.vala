@@ -136,6 +136,7 @@ namespace SystemPeer
             if      (schedule_task_addarc(task)) {}
             else if (schedule_task_prepare_add_identity(task)) {}
             else if (schedule_task_add_identity(task)) {}
+            else if (schedule_task_addtag(task)) {}
             else error(@"unknown task $(task)");
         }
 
@@ -152,6 +153,9 @@ namespace SystemPeer
         }
 
         // TODO
+
+        // remove all arcs
+        while (! arcs.is_empty) fake_neighborhood_arc_removing_then_removed(arcs[0]);
 
         // Then we destroy the object IdentityManager.
         identity_mgr = null;
