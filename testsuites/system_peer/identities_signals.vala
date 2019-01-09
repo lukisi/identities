@@ -30,12 +30,20 @@ namespace SystemPeer
 
     void identities_identity_arc_removing(IIdmgmtArc arc, NodeID id, NodeID peer_nodeid)
     {
-        warning("unused signal identities_identity_arc_removing");
+        tester_events.add(@"Identities:Signal:identity_arc_removing");
+        print(@"Identities: Signal identity_arc_removing:\n");
+        print(@"    arc: dev $(arc.get_dev()) peer_mac $(arc.get_peer_mac()) peer_linklocal $(arc.get_peer_linklocal())\n");
+        print(@"    my identity: nodeid $(id.id)\n");
+        print(@"    peer_nodeid: nodeid $(peer_nodeid.id)\n");
     }
 
     void identities_identity_arc_removed(IIdmgmtArc arc, NodeID id, NodeID peer_nodeid)
     {
-        warning("unused signal identities_identity_arc_removed");
+        tester_events.add(@"Identities:Signal:identity_arc_removed");
+        print(@"Identities: Signal identity_arc_removed:\n");
+        print(@"    arc: dev $(arc.get_dev()) peer_mac $(arc.get_peer_mac()) peer_linklocal $(arc.get_peer_linklocal())\n");
+        print(@"    my identity: nodeid $(id.id)\n");
+        print(@"    peer_nodeid: nodeid $(peer_nodeid.id)\n");
     }
 
     void identities_arc_removed(IIdmgmtArc arc)
