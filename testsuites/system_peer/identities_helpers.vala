@@ -9,6 +9,7 @@ namespace SystemPeer
     {
         public void create_namespace(string ns)
         {
+            tester_events.add(@"NetnsManager:create_namespace:netns '$(ns)'");
             assert(ns != "");
             cm.single_command(new ArrayList<string>.wrap({
                 @"ip", @"netns", @"add", @"$(ns)"}));
@@ -22,6 +23,7 @@ namespace SystemPeer
 
         public void create_pseudodev(string dev, string ns, string pseudo_dev, out string pseudo_mac)
         {
+            tester_events.add(@"NetnsManager:create_pseudodev:$(pseudo_dev) link $(dev) netns '$(ns)'");
             assert(ns != "");
             cm.single_command(new ArrayList<string>.wrap({
                 @"ip", @"link", @"add", @"dev", @"$(pseudo_dev)", @"link", @"$(dev)", @"type", @"macvlan"}));
@@ -57,6 +59,7 @@ namespace SystemPeer
 
         public void add_address(string ns, string pseudo_dev, string linklocal)
         {
+            tester_events.add(@"NetnsManager:add_address:$(linklocal) dev $(pseudo_dev) netns '$(ns)'");
             // ns may be empty-string.
             ArrayList<string> argv = new ArrayList<string>();
             if (ns != "") argv.add_all_array({@"ip", @"netns", @"exec", @"$(ns)"});
@@ -67,6 +70,7 @@ namespace SystemPeer
 
         public void add_gateway(string ns, string linklocal_src, string linklocal_dst, string dev)
         {
+            tester_events.add(@"NetnsManager:add_gateway:$(linklocal_dst) dev $(dev) src $(linklocal_src) netns '$(ns)'");
             // ns may be empty-string.
             ArrayList<string> argv = new ArrayList<string>();
             if (ns != "") argv.add_all_array({@"ip", @"netns", @"exec", @"$(ns)"});
@@ -77,6 +81,7 @@ namespace SystemPeer
 
         public void remove_gateway(string ns, string linklocal_src, string linklocal_dst, string dev)
         {
+            tester_events.add(@"NetnsManager:remove_gateway:$(linklocal_dst) dev $(dev) src $(linklocal_src) netns '$(ns)'");
             // ns may be empty-string.
             ArrayList<string> argv = new ArrayList<string>();
             if (ns != "") argv.add_all_array({@"ip", @"netns", @"exec", @"$(ns)"});
@@ -87,6 +92,7 @@ namespace SystemPeer
 
         public void flush_table(string ns)
         {
+            tester_events.add(@"NetnsManager:flush_table:netns '$(ns)'");
             assert(ns != "");
             cm.single_command(new ArrayList<string>.wrap({
                 @"ip", @"netns", @"exec", @"$(ns)", @"ip", @"route", @"flush", @"table", @"main"}));
@@ -94,6 +100,7 @@ namespace SystemPeer
 
         public void delete_pseudodev(string ns, string pseudo_dev)
         {
+            tester_events.add(@"NetnsManager:delete_pseudodev:$(pseudo_dev) netns '$(ns)'");
             assert(ns != "");
             cm.single_command(new ArrayList<string>.wrap({
                 @"ip", @"netns", @"exec", @"$(ns)", @"ip", @"link", @"delete", @"$(pseudo_dev)", @"type", @"macvlan"}));
@@ -101,6 +108,7 @@ namespace SystemPeer
 
         public void delete_namespace(string ns)
         {
+            tester_events.add(@"NetnsManager:delete_namespace:netns '$(ns)'");
             assert(ns != "");
             cm.single_command(new ArrayList<string>.wrap({
                 @"ip", @"netns", @"del", @"$(ns)"}));

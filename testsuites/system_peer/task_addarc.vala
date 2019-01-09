@@ -45,6 +45,7 @@ namespace SystemPeer
         {
             tasklet.ms_wait(ms_wait);
 
+            tester_events.add(@"Tester:executing:add_arc");
             PseudoNetworkInterface pseudonic = pseudonic_map[my_dev];
             string my_mac = pseudonic.mac;
             int /*NeighborhoodNodeID*/ peer_id = fake_random_neighborhoodnodeid(peer_pid);

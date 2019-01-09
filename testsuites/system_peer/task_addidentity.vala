@@ -43,6 +43,7 @@ namespace SystemPeer
         {
             tasklet.ms_wait(ms_wait);
 
+            tester_events.add(@"Tester:executing:prepare_add_identity");
             NodeID old_id = my_nodeid_list[nodeid_index];
             identity_mgr.prepare_add_identity(migration_id, old_id);
 
@@ -87,6 +88,7 @@ namespace SystemPeer
         {
             tasklet.ms_wait(ms_wait);
 
+            tester_events.add(@"Tester:executing:add_identity");
             NodeID old_id = my_nodeid_list[nodeid_index];
             NodeID new_id = identity_mgr.add_identity(migration_id, old_id);
             my_nodeid_list.add(new_id);

@@ -21,6 +21,7 @@ namespace SystemPeer
     int /*NeighborhoodNodeID*/ my_system_id;
     ArrayList<NodeID> my_nodeid_list;
     ArrayList<IdmgmtArc> arcs;
+    ArrayList<string> tester_events;
 
     int main(string[] _args)
     {
@@ -43,6 +44,7 @@ namespace SystemPeer
 
         ArrayList<string> args = new ArrayList<string>.wrap(_args);
 
+        tester_events = new ArrayList<string>();
         ArrayList<string> devs;
         // Names of the network interfaces to do RPC (to begin with).
         devs = new ArrayList<string>();
@@ -162,6 +164,8 @@ namespace SystemPeer
 
         PthTaskletImplementer.kill();
 
+        print("Exiting. Event list:\n");
+        foreach (string s in tester_events) print(@"$(s)\n");
         return 0;
     }
 
