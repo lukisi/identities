@@ -1,9 +1,9 @@
 #!/bin/bash
 
-./system_peer -i eth0 -i eth1 -p 1 -t addarc,2,eth0,2,eth0 -t addtag,3,work -t removearc,4,0 > test_script1_pid1_out.txt 2>&1 &
+./system_peer -i eth0 -i eth1 -p 1 -t addarc,2,eth0,2,eth0 -t addtag,3,work -t removearc,4,0 --check-add-remove-arc-pid1 > test_add_remove_arc_pid1_out.txt 2>&1 &
 PEER_1_PID=$!
 sleep 1
-./system_peer -i eth0 -i eth1 -p 2 -t addarc,1,eth0,1,eth0 > test_script1_pid2_out.txt 2>&1 &
+./system_peer -i eth0 -i eth1 -p 2 -t addarc,1,eth0,1,eth0 --check-add-remove-arc-pid2 > test_add_remove_arc_pid2_out.txt 2>&1 &
 PEER_2_PID=$!
 sleep 0.3
 

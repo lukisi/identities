@@ -11,6 +11,8 @@ namespace SystemPeer
     [CCode (array_length = false, array_null_terminated = true)]
     string[] _tasks;
     int pid;
+    bool check_add_remove_arc_pid1;
+    bool check_add_remove_arc_pid2;
 
     ITasklet tasklet;
     FakeCommandDispatcher cm;
@@ -26,12 +28,16 @@ namespace SystemPeer
     int main(string[] _args)
     {
         pid = 0; // default
+        check_add_remove_arc_pid1 = false; // default
+        check_add_remove_arc_pid2 = false; // default
         OptionContext oc = new OptionContext("<options>");
-        OptionEntry[] entries = new OptionEntry[4];
+        OptionEntry[] entries = new OptionEntry[6];
         int index = 0;
         entries[index++] = {"pid", 'p', 0, OptionArg.INT, ref pid, "Fake PID (e.g. -p 1234).", null};
         entries[index++] = {"interfaces", 'i', 0, OptionArg.STRING_ARRAY, ref interfaces, "Interface (e.g. -i eth1). You can use it multiple times.", null};
         entries[index++] = {"tasks", 't', 0, OptionArg.STRING_ARRAY, ref _tasks, "Tasks (e.g. -t addarc,2,eth0,5,eth1 means: after 2 secs add an arc from my nic eth0 to the nic eth1 of pid5). You can use it multiple times.", null};
+        entries[index++] = {"check-add-remove-arc-pid1", '\0', 0, OptionArg.NONE, ref check_add_remove_arc_pid1, "Final check for test_add_remove_arc pid1.", null};
+        entries[index++] = {"check-add-remove-arc-pid2", '\0', 0, OptionArg.NONE, ref check_add_remove_arc_pid2, "Final check for test_add_remove_arc pid2.", null};
         entries[index++] = { null };
         oc.add_main_entries(entries, null);
         try {
@@ -171,6 +177,18 @@ namespace SystemPeer
 
         print("Exiting. Event list:\n");
         foreach (string s in tester_events) print(@"$(s)\n");
+
+        if (check_add_remove_arc_pid1)
+        {
+            print("Doing check_add_remove_arc_pid1...\n");
+            do_check_add_remove_arc_pid1();
+        }
+        if (check_add_remove_arc_pid2)
+        {
+            print("Doing check_add_remove_arc_pid2...\n");
+            do_check_add_remove_arc_pid2();
+        }
+
         return 0;
     }
 

@@ -12,7 +12,7 @@ check_PROGRAMS = \
 #test_identitymanager_1
 
 TESTS = \
-	script_1 \
+	add_remove_arc \
 	$(NULL)
 
 libidentities_la_SOURCES = \
@@ -108,6 +108,7 @@ system_peer_SOURCES =  \
 	testsuites/system_peer/task_addidentity.vala \
 	testsuites/system_peer/task_addtag.vala \
 	testsuites/system_peer/task_removearc.vala \
+	testsuites/system_peer/check_add_remove_arc.vala \
 	identities.vapi \
 	$(NULL)
 
