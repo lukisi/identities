@@ -2,7 +2,6 @@ identities.c
 rngen.c
 identities.h
 identities.vapi
-testsuites/test_identitymanager_1/test_identitymanager_1.c
 testsuites/system_peer/fake_command_dispatcher.c
 testsuites/system_peer/identities_helpers.c
 testsuites/system_peer/identities_signals.c
@@ -22,7 +21,6 @@ testsuites/system_peer/check_add_remove_arc.c
 testsuites/system_peer/check_add_remove_identities.c
 Makefile.in
 Makefile
-./test_identitymanager_1
 .dirstamp
 *.log
 *.trs
