@@ -14,10 +14,12 @@ testsuites/system_peer/serializables.c
 testsuites/system_peer/system_peer.c
 testsuites/system_peer/task_addarc.c
 testsuites/system_peer/task_addidentity.c
+testsuites/system_peer/task_removeidentity.c
 testsuites/system_peer/fake_neighborhood_signals.c
 testsuites/system_peer/task_addtag.c
 testsuites/system_peer/task_removearc.c
 testsuites/system_peer/check_add_remove_arc.c
+testsuites/system_peer/check_add_remove_identities.c
 Makefile.in
 Makefile
 ./test_identitymanager_1

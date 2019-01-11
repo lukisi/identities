@@ -13,6 +13,7 @@ namespace SystemPeer
     int pid;
     bool check_add_remove_arc_pid1;
     bool check_add_remove_arc_pid2;
+    bool check_add_remove_identities_pid1;
 
     ITasklet tasklet;
     FakeCommandDispatcher cm;
@@ -30,14 +31,16 @@ namespace SystemPeer
         pid = 0; // default
         check_add_remove_arc_pid1 = false; // default
         check_add_remove_arc_pid2 = false; // default
+        check_add_remove_identities_pid1 = false; // default
         OptionContext oc = new OptionContext("<options>");
-        OptionEntry[] entries = new OptionEntry[6];
+        OptionEntry[] entries = new OptionEntry[7];
         int index = 0;
         entries[index++] = {"pid", 'p', 0, OptionArg.INT, ref pid, "Fake PID (e.g. -p 1234).", null};
         entries[index++] = {"interfaces", 'i', 0, OptionArg.STRING_ARRAY, ref interfaces, "Interface (e.g. -i eth1). You can use it multiple times.", null};
         entries[index++] = {"tasks", 't', 0, OptionArg.STRING_ARRAY, ref _tasks, "Tasks (e.g. -t addarc,2,eth0,5,eth1 means: after 2 secs add an arc from my nic eth0 to the nic eth1 of pid5). You can use it multiple times.", null};
         entries[index++] = {"check-add-remove-arc-pid1", '\0', 0, OptionArg.NONE, ref check_add_remove_arc_pid1, "Final check for test_add_remove_arc pid1.", null};
         entries[index++] = {"check-add-remove-arc-pid2", '\0', 0, OptionArg.NONE, ref check_add_remove_arc_pid2, "Final check for test_add_remove_arc pid2.", null};
+        entries[index++] = {"check-add-remove-identities-pid1", '\0', 0, OptionArg.NONE, ref check_add_remove_identities_pid1, "Final check for test_add_remove_identities pid1.", null};
         entries[index++] = { null };
         oc.add_main_entries(entries, null);
         try {
@@ -144,6 +147,7 @@ namespace SystemPeer
             else if (schedule_task_add_identity(task)) {}
             else if (schedule_task_addtag(task)) {}
             else if (schedule_task_removearc(task)) {}
+            else if (schedule_task_remove_identity(task)) {}
             else error(@"unknown task $(task)");
         }
 
@@ -187,6 +191,11 @@ namespace SystemPeer
         {
             print("Doing check_add_remove_arc_pid2...\n");
             do_check_add_remove_arc_pid2();
+        }
+        if (check_add_remove_identities_pid1)
+        {
+            print("Doing check_add_remove_identities_pid1...\n");
+            do_check_add_remove_identities_pid1();
         }
 
         return 0;

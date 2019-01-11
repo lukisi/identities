@@ -1,0 +1,25 @@
+#!/bin/bash
+
+./system_peer -i eth0 -i eth1 -p 1 \
+              -t prepare_add_identity,1,555,0 \
+              -t add_identity,2,555,0 \
+              -t prepare_add_identity,3,333,0 \
+              -t add_identity,4,333,0 \
+              -t remove_identity,5,0 \
+              -t remove_identity,6,2 \
+              -t prepare_add_identity,7,545,1 \
+              -t add_identity,8,545,1 \
+              -t remove_identity,9,1 \
+              --check-add-remove-identities-pid1 > test_add_remove_identities_pid1_out.txt 2>&1 &
+PEER_1_PID=$!
+
+sleep 11
+
+# interrupt peer
+kill $PEER_1_PID
+# wait for peer and note down its retval
+wait $PEER_1_PID
+PEER_1_RET=$?
+
+# check testers retval
+test $PEER_1_RET -eq 0 || exit 1
