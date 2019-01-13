@@ -35,5 +35,6 @@ AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_FILES([Makefile])
 AC_CONFIG_LINKS([add_remove_arc:testsuites/scripts/add_remove_arc])
 AC_CONFIG_LINKS([add_remove_identities:testsuites/scripts/add_remove_identities])
+AC_CONFIG_LINKS([multi_id_arcs:testsuites/scripts/multi_id_arcs])
 AC_OUTPUT
 

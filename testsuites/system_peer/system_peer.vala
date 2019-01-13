@@ -14,6 +14,9 @@ namespace SystemPeer
     bool check_add_remove_arc_pid1;
     bool check_add_remove_arc_pid2;
     bool check_add_remove_identities_pid1;
+    bool check_multi_id_arcs_pid1;
+    bool check_multi_id_arcs_pid2;
+    bool check_multi_id_arcs_pid3;
 
     ITasklet tasklet;
     FakeCommandDispatcher cm;
@@ -32,15 +35,21 @@ namespace SystemPeer
         check_add_remove_arc_pid1 = false; // default
         check_add_remove_arc_pid2 = false; // default
         check_add_remove_identities_pid1 = false; // default
+        check_multi_id_arcs_pid1 = false; // default
+        check_multi_id_arcs_pid2 = false; // default
+        check_multi_id_arcs_pid3 = false; // default
         OptionContext oc = new OptionContext("<options>");
-        OptionEntry[] entries = new OptionEntry[7];
+        OptionEntry[] entries = new OptionEntry[10];
         int index = 0;
         entries[index++] = {"pid", 'p', 0, OptionArg.INT, ref pid, "Fake PID (e.g. -p 1234).", null};
         entries[index++] = {"interfaces", 'i', 0, OptionArg.STRING_ARRAY, ref interfaces, "Interface (e.g. -i eth1). You can use it multiple times.", null};
         entries[index++] = {"tasks", 't', 0, OptionArg.STRING_ARRAY, ref _tasks, "Tasks (e.g. -t addarc,2,eth0,5,eth1 means: after 2 secs add an arc from my nic eth0 to the nic eth1 of pid5). You can use it multiple times.", null};
-        entries[index++] = {"check-add-remove-arc-pid1", '\0', 0, OptionArg.NONE, ref check_add_remove_arc_pid1, "Final check for test_add_remove_arc pid1.", null};
-        entries[index++] = {"check-add-remove-arc-pid2", '\0', 0, OptionArg.NONE, ref check_add_remove_arc_pid2, "Final check for test_add_remove_arc pid2.", null};
-        entries[index++] = {"check-add-remove-identities-pid1", '\0', 0, OptionArg.NONE, ref check_add_remove_identities_pid1, "Final check for test_add_remove_identities pid1.", null};
+        entries[index++] = {"check-add-remove-arc-pid1", '\0', 0, OptionArg.NONE, ref check_add_remove_arc_pid1, "Final check for test add_remove_arc pid1.", null};
+        entries[index++] = {"check-add-remove-arc-pid2", '\0', 0, OptionArg.NONE, ref check_add_remove_arc_pid2, "Final check for test add_remove_arc pid2.", null};
+        entries[index++] = {"check-add-remove-identities-pid1", '\0', 0, OptionArg.NONE, ref check_add_remove_identities_pid1, "Final check for test add_remove_identities pid1.", null};
+        entries[index++] = {"check-multi-id-arcs-pid1", '\0', 0, OptionArg.NONE, ref check_multi_id_arcs_pid1, "Final check for test multi_id_arcs pid1.", null};
+        entries[index++] = {"check-multi-id-arcs-pid2", '\0', 0, OptionArg.NONE, ref check_multi_id_arcs_pid2, "Final check for test multi_id_arcs pid2.", null};
+        entries[index++] = {"check-multi-id-arcs-pid3", '\0', 0, OptionArg.NONE, ref check_multi_id_arcs_pid3, "Final check for test multi_id_arcs pid3.", null};
         entries[index++] = { null };
         oc.add_main_entries(entries, null);
         try {
@@ -196,6 +205,21 @@ namespace SystemPeer
         {
             print("Doing check_add_remove_identities_pid1...\n");
             do_check_add_remove_identities_pid1();
+        }
+        if (check_multi_id_arcs_pid1)
+        {
+            print("Doing check_multi_id_arcs_pid1...\n");
+            do_check_multi_id_arcs_pid1();
+        }
+        if (check_multi_id_arcs_pid2)
+        {
+            print("Doing check_multi_id_arcs_pid2...\n");
+            do_check_multi_id_arcs_pid2();
+        }
+        if (check_multi_id_arcs_pid3)
+        {
+            print("Doing check_multi_id_arcs_pid3...\n");
+            do_check_multi_id_arcs_pid3();
         }
 
         return 0;

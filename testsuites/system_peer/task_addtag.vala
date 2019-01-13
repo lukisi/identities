@@ -38,6 +38,7 @@ namespace SystemPeer
         {
             tasklet.ms_wait(ms_wait);
 
+            print(@"Tag: $(label)\n");
             tester_events.add(@"Tester:Tag:$(label)");
 
             return null;

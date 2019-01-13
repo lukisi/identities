@@ -1,0 +1,77 @@
+#!/bin/bash
+
+./system_peer -i eth0 -i eth1 -p 1 \
+              -t addtag,4,4 \
+              -t addtag,6,6 \
+              -t addtag,7,7 \
+              -t addtag,9,9 \
+               \
+              -t addarc,1,eth0,3,eth1 \
+              -t addarc,1,eth1,2,eth0 \
+               \
+              -t prepare_add_identity,2,555,0 \
+              -t add_identity,3,555,0 \
+               \
+              -t remove_identity,5,0 \
+               \
+              -t removearc,8,1 \
+              -t removearc,8,0 \
+              --check-multi-id-arcs-pid1 > test_multi_id_arcs_pid1_out.txt 2>&1 &
+PEER_1_PID=$!
+./system_peer -i eth0 -i eth1 -p 2 \
+              -t addtag,4,4 \
+              -t addtag,6,6 \
+              -t addtag,7,7 \
+              -t addtag,9,9 \
+               \
+              -t addarc,1,eth0,1,eth1 \
+              -t addarc,1,eth1,3,eth0 \
+               \
+              -t prepare_add_identity,2,555,0 \
+              -t add_identity,3,555,0 \
+               \
+              -t remove_identity,5,0 \
+               \
+              -t removearc,8,1 \
+              -t removearc,8,0 \
+              --check-multi-id-arcs-pid2 > test_multi_id_arcs_pid2_out.txt 2>&1 &
+PEER_2_PID=$!
+./system_peer -i eth0 -i eth1 -p 3 \
+              -t addtag,2,2 \
+              -t addtag,4,4 \
+              -t addtag,6,6 \
+              -t addtag,7,7 \
+              -t addtag,9,9 \
+               \
+              -t addarc,1,eth0,2,eth1 \
+              -t addarc,1,eth1,1,eth0 \
+               \
+              -t removearc,8,1 \
+              -t removearc,8,0 \
+              --check-multi-id-arcs-pid3 > test_multi_id_arcs_pid3_out.txt 2>&1 &
+PEER_3_PID=$!
+
+sleep 10
+
+# interrupt peer
+kill $PEER_1_PID
+# wait for peer and note down its retval
+wait $PEER_1_PID
+PEER_1_RET=$?
+
+# interrupt peer
+kill $PEER_2_PID
+# wait for peer and note down its retval
+wait $PEER_2_PID
+PEER_2_RET=$?
+
+# interrupt peer
+kill $PEER_3_PID
+# wait for peer and note down its retval
+wait $PEER_3_PID
+PEER_3_RET=$?
+
+# check testers retval
+test $PEER_1_RET -eq 0 || exit 1
+test $PEER_2_RET -eq 0 || exit 2
+test $PEER_3_RET -eq 0 || exit 3
