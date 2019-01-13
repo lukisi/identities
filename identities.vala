@@ -655,7 +655,7 @@ namespace Netsukuku.Identities
                 netns_manager.remove_gateway(ns, linklocal, to_remove.peer_linklocal, pseudodev);
             }
             string k = key_for_identity_arcs(id, arc);
-            identity_arcs[k].remove(to_remove);
+            if (identity_arcs.has_key(k)) identity_arcs[k].remove(to_remove);
             if (do_tell)
             {
                 // notify_identity_arc_removed through this arc
