@@ -1,0 +1,68 @@
+#!/bin/bash
+
+./system_peer -i eth0 -p 1 \
+              -t addtag,1,1 \
+              -t addtag,2,2 \
+              -t addtag,3,3 \
+              -t addtag,4,4 \
+              -t addtag,5,5 \
+               \
+              -t addarc,1,eth0,2,eth0 \
+               \
+              -t addinterface,2,eth1 \
+               \
+              -t addarc,3,eth1,3,eth0 \
+               \
+              -t removeinterface,4,eth0 \
+               \
+              --check-add-remove-interface-2-pid1 > test_add_remove_interface_2_pid1_out.txt 2>&1 &
+PEER_1_PID=$!
+./system_peer -i eth0 -p 2 \
+              -t addtag,1,1 \
+              -t addtag,2,2 \
+              -t addtag,3,3 \
+              -t addtag,4,4 \
+              -t addtag,5,5 \
+               \
+              -t addarc,1,eth0,1,eth0 \
+               \
+              -t removearc,4,0 \
+               \
+              --check-add-remove-interface-2-pid2 > test_add_remove_interface_2_pid2_out.txt 2>&1 &
+PEER_2_PID=$!
+./system_peer -i eth0 -p 3 \
+              -t addtag,1,1 \
+              -t addtag,2,2 \
+              -t addtag,3,3 \
+              -t addtag,4,4 \
+              -t addtag,5,5 \
+               \
+              -t addarc,3,eth0,1,eth1 \
+               \
+              --check-add-remove-interface-2-pid3 > test_add_remove_interface_2_pid3_out.txt 2>&1 &
+PEER_3_PID=$!
+
+sleep 5.2
+
+# interrupt peer
+kill $PEER_1_PID
+# wait for peer and note down its retval
+wait $PEER_1_PID
+PEER_1_RET=$?
+
+# interrupt peer
+kill $PEER_2_PID
+# wait for peer and note down its retval
+wait $PEER_2_PID
+PEER_2_RET=$?
+
+# interrupt peer
+kill $PEER_3_PID
+# wait for peer and note down its retval
+wait $PEER_3_PID
+PEER_3_RET=$?
+
+# check testers retval
+test $PEER_1_RET -eq 0 || exit 1
+test $PEER_2_RET -eq 0 || exit 2
+test $PEER_3_RET -eq 0 || exit 3

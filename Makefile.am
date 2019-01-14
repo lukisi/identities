@@ -15,6 +15,7 @@ TESTS = \
 	multi_id_arcs \
 	add_arc_after_identity \
 	add_remove_interface \
+	add_remove_interface_2 \
 	$(NULL)
 
 libidentities_la_SOURCES = \
@@ -77,6 +78,7 @@ system_peer_SOURCES =  \
 	testsuites/system_peer/check_add_remove_identities.vala \
 	testsuites/system_peer/check_multi_id_arcs.vala \
 	testsuites/system_peer/check_add_arc_after_identity.vala \
+	testsuites/system_peer/check_add_remove_interface.vala \
 	identities.vapi \
 	$(NULL)
 

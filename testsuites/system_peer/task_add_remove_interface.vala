@@ -97,6 +97,20 @@ namespace SystemPeer
             tasklet.ms_wait(ms_wait);
 
             tester_events.add(@"Tester:executing:removeinterface");
+
+            // When the user (ntkd) removes the interface from identity_mgr, it needs first to remove
+            //  the same interface from neighborhood_mgr. That will result in the neighborhood_mgr
+            //  to remove the arcs and emit signals.
+            ArrayList<IdmgmtArc> to_remove = new ArrayList<IdmgmtArc>();
+            foreach (IdmgmtArc arc in arcs)
+            {
+                if (arc.my_dev == my_dev) to_remove.add(arc);
+            }
+            foreach (IdmgmtArc arc in to_remove)
+            {
+                fake_neighborhood_arc_removing_then_removed(arc);
+            }
+
             identity_mgr.remove_handled_nic(my_dev);
             stop_rpc(my_dev);
 
