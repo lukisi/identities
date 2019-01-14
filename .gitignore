@@ -17,6 +17,7 @@ testsuites/system_peer/task_removeidentity.c
 testsuites/system_peer/fake_neighborhood_signals.c
 testsuites/system_peer/task_addtag.c
 testsuites/system_peer/task_removearc.c
+testsuites/system_peer/task_add_remove_interface.c
 testsuites/system_peer/check_add_remove_arc.c
 testsuites/system_peer/check_add_remove_identities.c
 testsuites/system_peer/check_multi_id_arcs.c

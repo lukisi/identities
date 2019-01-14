@@ -166,6 +166,8 @@ namespace SystemPeer
             else if (schedule_task_addtag(task)) {}
             else if (schedule_task_removearc(task)) {}
             else if (schedule_task_remove_identity(task)) {}
+            else if (schedule_task_addinterface(task)) {}
+            else if (schedule_task_removeinterface(task)) {}
             else error(@"unknown task $(task)");
         }
 

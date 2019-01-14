@@ -1,0 +1,20 @@
+#!/bin/bash
+
+./system_peer -i eth0 -p 1 \
+              -t addtag,3,3 \
+              -t addinterface,1,eth1 \
+              -t removeinterface,2,eth0 \
+              > test_add_remove_interface_pid1_out.txt 2>&1 &
+              # --check-add-remove-interface-pid1
+PEER_1_PID=$!
+
+sleep 4
+
+# interrupt peer
+kill $PEER_1_PID
+# wait for peer and note down its retval
+wait $PEER_1_PID
+PEER_1_RET=$?
+
+# check testers retval
+test $PEER_1_RET -eq 0 || exit 1

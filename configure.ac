@@ -37,5 +37,6 @@ AC_CONFIG_LINKS([add_remove_arc:testsuites/scripts/add_remove_arc])
 AC_CONFIG_LINKS([add_remove_identities:testsuites/scripts/add_remove_identities])
 AC_CONFIG_LINKS([multi_id_arcs:testsuites/scripts/multi_id_arcs])
 AC_CONFIG_LINKS([add_arc_after_identity:testsuites/scripts/add_arc_after_identity])
+AC_CONFIG_LINKS([add_remove_interface:testsuites/scripts/add_remove_interface])
 AC_OUTPUT
 
