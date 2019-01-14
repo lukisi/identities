@@ -1,0 +1,62 @@
+#!/bin/bash
+
+./system_peer -i wl0 -p 1 \
+              -t addtag,4,4 \
+              -t addtag,8,8 \
+               \
+              -t addarc,1,wl0,2,wl0 \
+               \
+              -t prepare_add_identity,2,555,0 \
+              -t add_identity,3,555,0 \
+               \
+              -t addarc,5,wl0,3,wl0 \
+               \
+              -t remove_identity,7,0 \
+               \
+              -t removearc,9,1 \
+              -t removearc,9,0 \
+              --check-add-arc-after-identity-pid1 > test_add_arc_after_identity_pid1_out.txt 2>&1 &
+PEER_1_PID=$!
+./system_peer -i wl0 -p 2 \
+              -t addtag,4,4 \
+              -t addtag,8,8 \
+               \
+              -t addarc,1,wl0,1,wl0 \
+               \
+              -t removearc,9,0 \
+              --check-add-arc-after-identity-pid2 > test_add_arc_after_identity_pid2_out.txt 2>&1 &
+PEER_2_PID=$!
+./system_peer -i wl0 -p 3 \
+              -t addtag,4,4 \
+              -t addtag,8,8 \
+               \
+              -t addarc,5,wl0,1,wl0 \
+               \
+              -t removearc,9,0 \
+              --check-add-arc-after-identity-pid3 > test_add_arc_after_identity_pid3_out.txt 2>&1 &
+PEER_3_PID=$!
+
+sleep 10
+
+# interrupt peer
+kill $PEER_1_PID
+# wait for peer and note down its retval
+wait $PEER_1_PID
+PEER_1_RET=$?
+
+# interrupt peer
+kill $PEER_2_PID
+# wait for peer and note down its retval
+wait $PEER_2_PID
+PEER_2_RET=$?
+
+# interrupt peer
+kill $PEER_3_PID
+# wait for peer and note down its retval
+wait $PEER_3_PID
+PEER_3_RET=$?
+
+# check testers retval
+test $PEER_1_RET -eq 0 || exit 1
+test $PEER_2_RET -eq 0 || exit 2
+test $PEER_3_RET -eq 0 || exit 3

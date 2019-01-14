@@ -17,6 +17,9 @@ namespace SystemPeer
     bool check_multi_id_arcs_pid1;
     bool check_multi_id_arcs_pid2;
     bool check_multi_id_arcs_pid3;
+    bool check_add_arc_after_identity_pid1;
+    bool check_add_arc_after_identity_pid2;
+    bool check_add_arc_after_identity_pid3;
 
     ITasklet tasklet;
     FakeCommandDispatcher cm;
@@ -38,8 +41,11 @@ namespace SystemPeer
         check_multi_id_arcs_pid1 = false; // default
         check_multi_id_arcs_pid2 = false; // default
         check_multi_id_arcs_pid3 = false; // default
+        check_add_arc_after_identity_pid1 = false; // default
+        check_add_arc_after_identity_pid2 = false; // default
+        check_add_arc_after_identity_pid3 = false; // default
         OptionContext oc = new OptionContext("<options>");
-        OptionEntry[] entries = new OptionEntry[10];
+        OptionEntry[] entries = new OptionEntry[13];
         int index = 0;
         entries[index++] = {"pid", 'p', 0, OptionArg.INT, ref pid, "Fake PID (e.g. -p 1234).", null};
         entries[index++] = {"interfaces", 'i', 0, OptionArg.STRING_ARRAY, ref interfaces, "Interface (e.g. -i eth1). You can use it multiple times.", null};
@@ -50,6 +56,9 @@ namespace SystemPeer
         entries[index++] = {"check-multi-id-arcs-pid1", '\0', 0, OptionArg.NONE, ref check_multi_id_arcs_pid1, "Final check for test multi_id_arcs pid1.", null};
         entries[index++] = {"check-multi-id-arcs-pid2", '\0', 0, OptionArg.NONE, ref check_multi_id_arcs_pid2, "Final check for test multi_id_arcs pid2.", null};
         entries[index++] = {"check-multi-id-arcs-pid3", '\0', 0, OptionArg.NONE, ref check_multi_id_arcs_pid3, "Final check for test multi_id_arcs pid3.", null};
+        entries[index++] = {"check-add-arc-after-identity-pid1", '\0', 0, OptionArg.NONE, ref check_add_arc_after_identity_pid1, "Final check for test add_arc_after_identity pid1.", null};
+        entries[index++] = {"check-add-arc-after-identity-pid2", '\0', 0, OptionArg.NONE, ref check_add_arc_after_identity_pid2, "Final check for test add_arc_after_identity pid2.", null};
+        entries[index++] = {"check-add-arc-after-identity-pid3", '\0', 0, OptionArg.NONE, ref check_add_arc_after_identity_pid3, "Final check for test add_arc_after_identity pid3.", null};
         entries[index++] = { null };
         oc.add_main_entries(entries, null);
         try {
@@ -220,6 +229,21 @@ namespace SystemPeer
         {
             print("Doing check_multi_id_arcs_pid3...\n");
             do_check_multi_id_arcs_pid3();
+        }
+        if (check_add_arc_after_identity_pid1)
+        {
+            print("Doing check_add_arc_after_identity_pid1...\n");
+            do_check_add_arc_after_identity_pid1();
+        }
+        if (check_add_arc_after_identity_pid2)
+        {
+            print("Doing check_add_arc_after_identity_pid2...\n");
+            do_check_add_arc_after_identity_pid2();
+        }
+        if (check_add_arc_after_identity_pid3)
+        {
+            print("Doing check_add_arc_after_identity_pid3...\n");
+            do_check_add_arc_after_identity_pid3();
         }
 
         return 0;

@@ -20,6 +20,7 @@ testsuites/system_peer/task_removearc.c
 testsuites/system_peer/check_add_remove_arc.c
 testsuites/system_peer/check_add_remove_identities.c
 testsuites/system_peer/check_multi_id_arcs.c
+testsuites/system_peer/check_add_arc_after_identity.c
 Makefile.in
 Makefile
 .dirstamp
