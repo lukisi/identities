@@ -321,6 +321,7 @@ namespace Netsukuku.Identities
             foreach (Identity id in id_list)
             {
                 string k = key_for_identity_arcs(id.id, arc);
+                if (! identity_arcs.has_key(k)) continue;
                 ArrayList<NodeID> peer_id_list = new ArrayList<NodeID>();
                 foreach (IdentityArc id_arc in identity_arcs[k])
                     peer_id_list.add(id_arc.peer_nodeid);
@@ -329,6 +330,7 @@ namespace Netsukuku.Identities
                     identity_arc_removing(arc, id.id, peer_id);
                     remove_identity_arc(arc, id.id, peer_id, false);
                 }
+                if (! identity_arcs.has_key(k)) continue;
                 assert(identity_arcs[k].is_empty);
                 identity_arcs.unset(k);
             }
